@@ -469,17 +469,13 @@ while Running:
             genMeteor([1, [1, 2, 1, 0, 0, 0, 0, 0, 1, 2, 1], [2, 5, 2, 1, 1, 2, 1, 1, 2, 5, 2], [1, 2, 1, 1, 2, 6, 2, 1, 1, 2, 1], [0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0]], (boss.coords[0]+20, boss.coords[1]))
         t -= 1
         if t < 1:
-            if boss.coords[0]+75 > ship.coords[0]+15:
+            if boss.coords[0]+(boss.size[0]/2) > ship.coords[0]+(ship.size[0]/2):
                 boss.coords = (boss.coords[0]-1, boss.coords[1])
-                if boss.coords[0] < 0:
-                    boss.coords = (0, boss.coords[1])
-            if boss.coords[0]+75 < ship.coords[0]+15:
+            if boss.coords[0]+(boss.size[0]/2) < ship.coords[0]+(ship.size[0]/2):
                 boss.coords = (boss.coords[0]+1, boss.coords[1])
-                if boss.coords[0] > 500:
-                    boss.coords = (500, boss.coords[1])
             if boss.coords[0]+75 == ship.coords[0]+15:
                 pass
-            t = 10
+            t = boss.speed
         
         
     #user input
