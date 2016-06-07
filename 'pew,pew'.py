@@ -87,7 +87,7 @@ gundrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, drillpic)
 gunshield = gun("Shield Thrower", 10, 20, 1, (20, 5), 1, 1, 1, 50, shieldpic)
 guntommy = gun("Tommy Gun", 2, 1, 80, (2, 2), 4, 3, 2, 15, pewpic)
 gunop = gun("God gun", 50, 100, 1000, (50, 5), 6, 2, 30, 0, hypershieldpic)
-gunwall = gun("Wall Placer", 1, 55, 1, (50, 5), 1, 0, 1, 50, hypershieldpic)
+gunwall = gun("Wall Placer", 1, 55, 1, (50, 5), 6, 0, 1, 50, hypershieldpic)
 upgrades = [gunrail, gunlazer, gundrill, gunshield, guntommy, gunwall]
 
 class upgrade(object):
@@ -387,7 +387,7 @@ while Running:
                                 if rand < 10:
                                     rand = 10
                                 boss = Boss(1+bossesbeat, 300+(150*bossesbeat), 5+bossesbeat, (150, 50), 10, rand, pygame.image.load('pewpew_enmBoss.png'))
-                                boss.coords = ((screenX/2)-(size[0]/2), -size[1])
+                                boss.coords = ((screenX/2)-(boss.size[0]/2), -size[1])
                                 bosstime = timer.time + 6000
                                 
                 if not alive:
