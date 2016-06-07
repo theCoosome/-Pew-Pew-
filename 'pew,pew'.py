@@ -54,18 +54,19 @@ print "pewpew version 0.1.2"
 
         
 class proj(object):
-    def __init__(self, hp, coords, size, speed, damage, pic):
+    def __init__(self, hp, coords, size, speed, move, damage, pic):
         self.hp = hp
         self.coords = coords
         self.size = size
         self.speed = speed
+        self.move = move
         self.dmg = damage
         self.pic = pic
 
 projectiles = []
         
 class gun(object):
-    def __init__(self, id, hpmod, hp, fires, size, speed, damage, cooldown, pic):
+    def __init__(self, id, hpmod, hp, fires, size, speed, move, damage, cooldown, pic):
         self.hp = hp
         #self.basehp = hp
         self.hpmod = hpmod
@@ -73,19 +74,21 @@ class gun(object):
         self.maxfires = fires-1
         self.size = size
         self.speed = speed
+        self.move = move
         self.dmg = damage
         self.id = id
         self.cooldown = cooldown
         self.pic = pic
         
-gunbase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 1, 25, pewpic)
-gunrail = gun("Railgun", 1, 2, 18, (2, 5), 100, 15, 28, railpic)
-gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 10), 5, 1, 0, lazerpic)
-gundrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 5, 40, drillpic)
-gunshield = gun("Shield Thrower", 10, 20, 1, (20, 5), 1, 1, 50, shieldpic)
-guntommy = gun("Tommy Gun", 2, 1, 80, (2, 2), 4, 2, 15, pewpic)
-gunop = gun("God gun", 50, 100, 1000, (50, 5), 6, 30, 0, hypershieldpic)
-upgrades = [gunrail, gunlazer, gundrill, gunshield, guntommy]
+gunbase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, pewpic)
+gunrail = gun("Railgun", 1, 2, 18, (2, 10), 10, 10, 15, 28, railpic)
+gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, lazerpic)
+gundrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, drillpic)
+gunshield = gun("Shield Thrower", 10, 20, 1, (20, 5), 1, 1, 1, 50, shieldpic)
+guntommy = gun("Tommy Gun", 2, 1, 80, (2, 2), 4, 3, 2, 15, pewpic)
+gunop = gun("God gun", 50, 100, 1000, (50, 5), 6, 2, 30, 0, hypershieldpic)
+gunwall = gun("Wall Placer", 1, 55, 1, (50, 5), 1, 0, 1, 50, hypershieldpic)
+upgrades = [gunrail, gunlazer, gundrill, gunshield, guntommy, gunwall]
 
 class upgrade(object):
     def __init__(self, coords, interval):
@@ -116,7 +119,7 @@ class Boss(object):
         self.hp = hp
         self.dmg = dmg
         self.basehp = hp
-        self.coords = ((screenX/2)-(size[0]/2), 10)
+        self.coords = ((screenX/2)-(size[0]/2), -size[1])
         self.size = size
         self.atkint = atkint
         self.speed = speed
@@ -249,7 +252,7 @@ def shoot():
     print "pew"
     timer.guncool = ship.gun.cooldown
     #           hp,             coords,                                                                 size,           speed,          damage,     pic)
-    temp = proj(ship.gun.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), ship.gun.size, ship.gun.speed, ship.gun.dmg, ship.gun.pic)
+    temp = proj(ship.gun.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), ship.gun.size, ship.gun.speed, ship.gun.move, ship.gun.dmg, ship.gun.pic)
     projectiles.append(temp)
     ship.gun.fires += 1
     if ship.gun.fires > ship.gun.maxfires:
@@ -262,7 +265,7 @@ def equip(weapon):
     ship.gun = weapon
     ship.hp += weapon.hpmod
     print weapon.pic
-        
+
 equip(gunbase)
 t = 100
 eventTimer = 10000
@@ -278,6 +281,7 @@ pressing = False
 lefting = False
 righting = False
 shooting = False
+mommod = 2
 
 powerpic = pygame.image.load('powerup.png')
 
@@ -347,7 +351,7 @@ while Running:
         else:
             alive = True
             for n in range(i.speed):
-                i.coords = (i.coords[0], i.coords[1]-2)
+                i.coords = (i.coords[0], i.coords[1]-i.move)
                 for x in meteors:
                     if collide(i.coords, i.size, x.coords, x.size):
                         print "collided"
@@ -383,6 +387,7 @@ while Running:
                                 if rand < 10:
                                     rand = 10
                                 boss = Boss(1+bossesbeat, 300+(150*bossesbeat), 5+bossesbeat, (150, 50), 10, rand, pygame.image.load('pewpew_enmBoss.png'))
+                                boss.coords = ((screenX/2)-(size[0]/2), -size[1])
                                 bosstime = timer.time + 6000
                                 
                 if not alive:
@@ -463,9 +468,9 @@ while Running:
     #enemy action
     if boss.on == 1:
         timer.bossatk -= 1
-        print timer.bossatk
         if timer.bossatk <= 0:
             timer.bossatk = boss.atkint
+            print timer.bossatk
             genMeteor([1, [1, 2, 1, 0, 0, 0, 0, 0, 1, 2, 1], [2, 5, 2, 1, 1, 2, 1, 1, 2, 5, 2], [1, 2, 1, 1, 2, 6, 2, 1, 1, 2, 1], [0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0]], (boss.coords[0]+20, boss.coords[1]))
         t -= 1
         if t < 1:
@@ -475,6 +480,8 @@ while Running:
                 boss.coords = (boss.coords[0]+1, boss.coords[1])
             if boss.coords[0]+75 == ship.coords[0]+15:
                 pass
+            if boss.coords[1] < 10:
+                boss.coords = (boss.coords[0], boss.coords[1]+1)
             t = boss.speed
         
         
@@ -483,18 +490,18 @@ while Running:
         if event.type == pygame.KEYDOWN:
             #movement
             if event.key == K_LEFT:
-                ship.mom = -2
+                ship.mom = -1 * mommod
                 pressing = True
                 lefting = True
             if event.key == K_RIGHT:
-                ship.mom = 2
+                ship.mom = 1 * mommod
                 pressing = True
                 righting = True
+            if event.key == K_DOWN:
+                mommod = 1
             #Weapons
             if event.key == K_UP:
                 shooting = True
-            if event.key == K_DOWN:
-                timer.time += 1000
             if event.key == K_q:
                 Running = False
             #OP
@@ -514,9 +521,8 @@ while Running:
                 print 'lazer cooldown: ', timer.guncool
                 print 'Backdrop: ', backdrop
                 print 'T: ', t
-                print 'Event Timer: ', eventTimer
+                print 'Boss Cooldown: ', timer.bossatk
                 print 'Boss HP: ', bosshp
-                print 'hp: ', ship.hp, 'max: ', ship.basehp
                 print 
             if event.key == K_b:
                 boss.on = 1
@@ -530,6 +536,8 @@ while Running:
                 ship.mom = 0
             if event.key == K_UP:
                 shooting = False
+            if event.key == K_DOWN:
+                mommod = 2
     if OP:
         pass
     
