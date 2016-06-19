@@ -42,16 +42,63 @@ shieldpic = pygame.image.load('gunshield.png')
 lazerpic = pygame.image.load('gunlazer.png')
 hypershieldpic = pygame.image.load('hypershield.png')
 backimage = pygame.image.load('pewpew_backdrop.png')
+powerpic = pygame.image.load('powerup.png')
+shippng = pygame.image.load('pewpewship.png')
+dmgpng = pygame.image.load('damagepew.png')
 
 #other
+
+class multipliers(object):
+    def __init__(self, hp, speed, cooldown, meteors):
+        self.hp = hp
+        self.speed = speed
+        self.cooldown = cooldown
+        self.meteors = meteors
+
+Running = True
+while Running:
+    Screen.fill(Black)
+    dialog = font.render("Pew Pew", True, White)	
+    Screen.blit(dialog, [0,50])
+    dialog = font.render("Use left and right arrows to move", True, White)	
+    Screen.blit(dialog, [0,50+20])
+    dialog = font.render("Up arrow to fire weapons.", True, White)	
+    Screen.blit(dialog, [0,50+20+20])
+    dialog = font.render("Collect Poweups to upgrade your ship", True, White)	
+    Screen.blit(dialog, [0,50+20+20+20])
+    Screen.blit(powerpic, [screenX/2-20,50+80])
+    dialog = font.render("Avoid meteors, and especially camps.", True, White)	
+    Screen.blit(dialog, [0,50+100])
+    Screen.blit(wall1, [60,50+120])
+    Screen.blit(wall5, [200,50+120])
+    dialog = font.render("See your stats at bottom", True, White)	
+    Screen.blit(dialog, [0,50+140])
+    dialog = font.render("Press an arrow key to start game", True, White)	
+    Screen.blit(dialog, [0,300])
+    dialog = font.render("And look out for someone at 10000m...", True, White)	
+    Screen.blit(dialog, [0,500])
+    
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN:
+            #movement
+            if event.key == K_LEFT:
+                Running = False
+                mult = multipliers(1, 1, 1, 28)
+            if event.key == K_UP:
+                Running = False
+                mult = multipliers(2, 2, 2, 18)
+            if event.key == K_RIGHT:
+                Running = False
+                mult = multipliers(3.5, 3, 2, 10)
+            if event.key == K_DOWN:
+                Running = False
+                mult = multipliers(40, 5, 5, 8)
+    pygame.display.update()
+    clock.tick(60)
 
 print "setup complete."
 #Version
 print "pewpew version 0.1.2"
-
-#Defining
-#u is you, e is enemey
-
         
 class proj(object):
     def __init__(self, hp, coords, size, speed, move, damage, pic):
@@ -125,7 +172,8 @@ class Boss(object):
         self.speed = speed
         self.pic = pic
         self.on = 0
-boss1 = Boss(1, 200, 10, (150, 50), 10, 500, pygame.image.load('pewpew_enmBoss.png'))
+        
+boss1 = Boss(1, 200*mult.hp, 10, (150, 50), 10, 500/mult.cooldown, pygame.image.load('pewpew_enmBoss.png'))
 bossstufff = [1, 200, 10, (150, 50), 10, 500]
 boss = boss1
 bossesbeat = 0
@@ -283,44 +331,11 @@ righting = False
 shooting = False
 mommod = 2
 
-powerpic = pygame.image.load('powerup.png')
-
-Running = True
-while Running:
-    Screen.fill(Black)
-    dialog = font.render("Pew Pew", True, White)    
-    Screen.blit(dialog, [0,50])
-    dialog = font.render("Use left and right arrows to move", True, White)    
-    Screen.blit(dialog, [0,50+20])
-    dialog = font.render("Up arrow to fire weapons.", True, White)    
-    Screen.blit(dialog, [0,50+20+20])
-    dialog = font.render("Collect Poweups to upgrade your ship", True, White)    
-    Screen.blit(dialog, [0,50+20+20+20])
-    Screen.blit(powerpic, [screenX/2-20,50+80])
-    dialog = font.render("Avoid meteors, and especially camps.", True, White)    
-    Screen.blit(dialog, [0,50+100])
-    Screen.blit(wall1, [60,50+120])
-    Screen.blit(wall5, [200,50+120])
-    dialog = font.render("See your stats at bottom", True, White)    
-    Screen.blit(dialog, [0,50+140])
-    dialog = font.render("Press an arrow key to start game", True, White)    
-    Screen.blit(dialog, [0,300])
-    dialog = font.render("And look out for someone at 10000m...", True, White)    
-    Screen.blit(dialog, [0,500])
-    
-    for event in pygame.event.get():
-        if event.type == pygame.KEYDOWN:
-            #movement
-            if event.key == K_LEFT or event.key == K_UP or event.key == K_RIGHT:
-                Running = False
-            
-    pygame.display.update()
-    clock.tick(60)
 
 #main loop
 Running = True
 while Running:
-    #t, eventTimer, backdrop = t-1, eventTimer-1, backdrop+1
+    thisship = shippng
     if timer.guncool > -1:
         timer.guncool -= 1
     if timer.guncool < 0 and shooting:
@@ -330,7 +345,7 @@ while Running:
         boss.on = 1
     timer.meteors -= 1
     if timer.meteors <= 0:
-        timer.meteors = 28
+        timer.meteors = mult.meteors
         print "New meteor"
         genMeteor(Meteors[random.randint(0,len(Meteors)-1)], (random.randint(0-20, screenX+20), 0-100))
         
@@ -383,10 +398,10 @@ while Running:
                             if boss.hp <= 0:
                                 boss.on = 0
                                 bossesbeat += 1
-                                rand = 500-(bossesbeat*10)
+                                rand = (500/mult.cooldown)-(bossesbeat*10)
                                 if rand < 10:
                                     rand = 10
-                                boss = Boss(1+bossesbeat, 300+(150*bossesbeat), 5+bossesbeat, (150, 50), 10, rand, pygame.image.load('pewpew_enmBoss.png'))
+                                boss = Boss(1+bossesbeat, (300+(150*bossesbeat))*mult.hp, 5+bossesbeat, (150, 50), 10, rand, pygame.image.load('pewpew_enmBoss.png'))
                                 boss.coords = ((screenX/2)-(boss.size[0]/2), -size[1])
                                 bosstime = timer.time + 6000
                                 
@@ -432,9 +447,10 @@ while Running:
                 meteors.append(meteor(i.hp-3, i.coords, (i.hp-2)*2))
         #movement
         for n in range(i.speed):
-            i.coords = (i.coords[0], i.coords[1]+2)
+            i.coords = (i.coords[0], i.coords[1]+mult.speed)
             if collide(ship.coords, ship.size, i.coords, i.size):
                 print "collided"
+                thisship = dmgpng
                 temp = i.dmg
                 i.hp -= ship.dmg
                 print "Meteor: " + str(i.hp)
@@ -556,7 +572,7 @@ while Running:
         
     timer.powerup -= 1
     if timer.powerup < 0:
-        timer.powerup = random.randint(500, 900)
+        timer.powerup = random.randint(500/mult.cooldown, 900/mult.cooldown)
         powerups.append(upgrade((random.randint(20, screenX-20), 50), random.randint(1, 2)))
         
     
@@ -567,7 +583,7 @@ while Running:
     if boss.on == 1:
         Screen.blit(boss.pic, boss.coords)
     
-    Screen.blit(pygame.image.load('pewpewship.png'), ship.coords)
+    Screen.blit(thisship, ship.coords)
     hpratio = (Decimal(ship.hp)/Decimal(ship.basehp))*100
     if hpratio >= 100:
         hpratio = float(hpratio)
