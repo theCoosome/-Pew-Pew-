@@ -151,7 +151,7 @@ class gun(object):
         self.cooldown = cooldown
         self.pic = pic
         
-gunbase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, pewpic)
+gunbase = gun("Pew Gun", 0, 1, 1000, (2, 5), 3, 2, 1, 25, pewpic)
 gunrail = gun("Railgun", 1, 2, 18, (2, 10), 10, 10, 15, 28, railpic)
 gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, lazerpic)
 gundrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, drillpic)
@@ -183,7 +183,41 @@ class ships(object):
         self.mom = 0
         self.move = 0
         self.gun = 0
-ship = ships(4, ((screenX/2)-15, 500), (6, 10), 1)
+        self.alive = True
+        
+        self.guncool = -30
+        global pewpic
+        self.img = pewpic
+        
+        self.pressing = False
+        self.lefting = False
+        self.righting = False
+        self.shooting = False
+        self.mommod = 2
+        
+    def shoot(self):
+        if self.alive:
+            global projectiles
+            global timer
+            print "pew!"
+            self.guncool = self.gun.cooldown
+            #           hp,             coords,                                                                 size,           speed,          damage,     pic)
+            temp = proj(self.gun.hp, (self.coords[0]+(self.size[0]/2)-(self.gun.size[0]/2), self.coords[1]-1), self.gun.size, self.gun.speed, self.gun.move, self.gun.dmg, self.gun.pic)
+            projectiles.append(temp)
+            self.gun.fires += 1
+            if self.gun.fires > self.gun.maxfires:
+                global gunbase
+                self.equip(gunbase)
+
+    def equip(self, weapon):
+        weapon.fires = 0
+        self.gun = weapon
+        self.hp += weapon.hpmod
+        print weapon.pic
+        
+ship1 = ships(4, ((screenX/2)-15, 500), (6, 10), 1)
+ship2 = ships(4, ((screenX/2)-15, 500), (6, 10), 1)
+allships = [ship1, ship2]
 
 class Boss(object):
     def __init__(self, id, hp, dmg, size, speed, atkint, pic):
@@ -220,7 +254,6 @@ for i in range(5):
         
 class timers(object):
     def __init__(self):
-        self.guncool = -30
         self.meteors = 5
         self.time = 0
         self.move = 1
@@ -236,6 +269,8 @@ def collide(p1, p2, p3, p4):
     if p1[0] + p2[0] > p3[0] and p1[0] < p3[0] + p4[0]:
         #if bottom is below top and top is above bottom
         if p1[1] + p2[1] > p3[1] and p1[1] < p3[1] + p4[1]:
+            #print "Object 1: ", p1, ",", p2
+            #print "Object 2: ", p3, ",", p4
             return True
 Screen.fill(Black)
 
@@ -267,16 +302,6 @@ Meteors = [
             [3, 6, 3, 3],
             [2, 3, 2, 2],
             [0, 2, 3, 0]],
-            
-            [3, [0, 1, 0],
-            [0, 0, 0],
-            [1, 0, 0],
-            [0, 0, 1],
-            [0, 1, 0],
-            [1, 2, 0],
-            [2, 3, 2],
-            [3, 3, 3],
-            [1, 3, 1]],
             
             [1, [0, 0, 0, 0, 1, 0, 0],
             [0, 0, 1, 0, 0, 0, 0],
@@ -326,28 +351,11 @@ def genMeteor(thisMet, mod):
                     boolet = meteor(temp, (w*10+mod[0], h*10+mod[1]), speed)#--------------------------------------------------------------------------make time mod
                     meteors.append(boolet)
         
-def shoot():
-    global ship
-    global projectiles
-    global timer
-    print "pew"
-    timer.guncool = ship.gun.cooldown
-    #           hp,             coords,                                                                 size,           speed,          damage,     pic)
-    temp = proj(ship.gun.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), ship.gun.size, ship.gun.speed, ship.gun.move, ship.gun.dmg, ship.gun.pic)
-    projectiles.append(temp)
-    ship.gun.fires += 1
-    if ship.gun.fires > ship.gun.maxfires:
-        global gunbase
-        equip(gunbase)
 
-def equip(weapon):
-    global ship
-    weapon.fires = 0
-    ship.gun = weapon
-    ship.hp += weapon.hpmod
-    print weapon.pic
-
-equip(gunbase)
+        
+for i in allships:
+    i.equip(gunbase)
+    
 t = 100
 eventTimer = 10000
 walls = 0
@@ -358,21 +366,18 @@ pygame.display.update()
 print "updated screen"
 time.sleep(.1)
 
-pressing = False
-lefting = False
-righting = False
-shooting = False
-mommod = 2
 
 
 #main loop
 Running = True
 while Running:
-    thisship = shippng
-    if timer.guncool > -1:
-        timer.guncool -= 1
-    if timer.guncool < 0 and shooting:
-        shoot()
+    for i in allships:
+        i.img = shippng
+        if i.guncool > -1:
+            i.guncool -= 1
+        if i.guncool < 0 and i.shooting:
+            i.shoot()
+    
     timer.time += mult.time
     if timer.time == bosstime:
         boss.on = 1
@@ -456,20 +461,17 @@ while Running:
         if not pressing and ship.move <= 50:
             ship.move += 2'''
     #player movement
-    timer.move -= 1
-    if timer.move <= 0:
-        timer.move = ship.move
-        ship.coords = (ship.coords[0]+ship.mom, ship.coords[1])
-        if ship.coords[0] > screenX-ship.size[0]:
-            ship.coords = (screenX-ship.size[0], ship.coords[1])
+    for i in allships:
+        i.coords = (i.coords[0]+i.mom, i.coords[1])
+        if i.coords[0] > screenX-i.size[0]:
+            i.coords = (screenX-i.size[0], i.coords[1])
             print "Don't go out of Bounds!"
-        if ship.coords[0] < 0:
-            ship.coords = (0, ship.coords[1])
+        if i.coords[0] < 0:
+            i.coords = (0, i.coords[1])
             print "Don't go out of Bounds!"
     
     
     #meteors
-    newmet = meteors
     for i in meteors:
         if not collide(i.coords, i.size, (0, 0-100), (screenX, screenY)):
             meteors.remove(i)
@@ -482,20 +484,30 @@ while Running:
         #movement
         for n in range(i.speed):
             i.coords = (i.coords[0], i.coords[1]+mult.speed)
-            if collide(ship.coords, ship.size, i.coords, i.size):
-                print "collided"
-                particles.append(particle([ship.coords[0]+(ship.size[0]/2), ship.coords[1]], [10, 10], [0, 1], explosionpic))
-                thisship = dmgpng
-                temp = i.dmg
-                i.hp -= ship.dmg
-                print "Meteor: " + str(i.hp)
-                if i.hp <= 0:
-                    meteors.remove(i)
-                    alive = False
-                ship.hp -= temp
-                print "Ship: " + str(ship.hp)
-                if ship.hp <= 0:
-                    Running = False
+            for ship in allships:
+                if collide(ship.coords, ship.size, i.coords, i.size):
+                    print "collided"
+                    particles.append(particle([ship.coords[0]+(ship.size[0]/2), ship.coords[1]], [10, 10], [0, 1], explosionpic))
+                    ship.img = dmgpng
+                    temp = i.dmg
+                    i.hp -= ship.dmg
+                    print "Meteor: " + str(i.hp)
+                    if i.hp <= 0:
+                        try:
+                            meteors.remove(i)
+                            alive = False
+                        except ValueError:
+                            alive = False
+                    ship.hp -= temp
+                    print "Ship: " + str(ship.hp)
+                    if ship.hp <= 0:
+                        ship.alive = False
+                        for x in range(6):
+                            particles.append(particle([ship.coords[0]+(ship.size[0]/2), ship.coords[1]], [10, 10], [random.randint(ship.mom-1, ship.mom+1), random.randint(-1, 1)], explosionpic))
+                        for x in range(4):
+                            particles.append(particle([ship.coords[0]+(ship.size[0]/2), ship.coords[1]], [10, 10], [random.randint(ship.mom-1, ship.mom+1), random.randint(-2, 0)], crumblepic))
+                        ship.coords = [ship.coords[0], screenY+5]
+                        
             if not alive:
                 break
         try:
@@ -525,6 +537,7 @@ while Running:
             genMeteor([1, [1, 2, 1, 0, 0, 0, 0, 0, 1, 2, 1], [2, 5, 2, 1, 1, 2, 1, 1, 2, 5, 2], [1, 2, 1, 1, 2, 6, 2, 1, 1, 2, 1], [0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0]], (boss.coords[0]+20, boss.coords[1]-15))
         t -= 1
         if t < 1:
+            ship = allships[len(allships)-1]
             if boss.coords[0]+(boss.size[0]/2) > ship.coords[0]+(ship.size[0]/2):
                 boss.coords = (boss.coords[0]-1, boss.coords[1])
             if boss.coords[0]+(boss.size[0]/2) < ship.coords[0]+(ship.size[0]/2):
@@ -534,40 +547,47 @@ while Running:
             if boss.coords[1] < 10:
                 boss.coords = (boss.coords[0], boss.coords[1]+1)
             t = boss.speed
+            allships[len(allships)-1] = ship
         
         
     #user input
     for event in pygame.event.get():
+        ship = allships[0]
+        ship2 = allships[1]
         if event.type == pygame.KEYDOWN:
             #movement
             if event.key == K_LEFT:
-                ship.mom = -1 * mommod
-                pressing = True
-                lefting = True
+                ship.mom = -1 * ship.mommod
+                ship.pressing = True
+                ship.lefting = True
             if event.key == K_RIGHT:
-                ship.mom = 1 * mommod
-                pressing = True
-                righting = True
+                ship.mom = 1 * ship.mommod
+                ship.pressing = True
+                ship.righting = True
             if event.key == K_DOWN:
-                mommod = 1
+                ship.mommod = 1
             #Weapons
             if event.key == K_UP:
-                shooting = True
-            if event.key == K_q:
+                ship.shooting = True
+                
+            #Ship 2
+            if event.key == K_a:
+                ship2.mom = -1 * ship2.mommod
+                ship2.pressing = True
+                ship2.lefting = True
+            if event.key == K_d:
+                ship2.mom = 1 * ship2.mommod
+                ship2.pressing = True
+                ship2.righting = True
+            if event.key == K_s:
+                ship2.mommod = 1
+            #Weapons
+            if event.key == K_w:
+                ship2.shooting = True
+                
+                
+            if event.key == K_p:
                 Running = False
-            #OP
-            if event.key == K_g:
-                OP = True
-                print "Opped."
-                equip(gunop)
-            if event.key == K_z:
-                equip(gunrail)
-            if event.key == K_x:
-                equip(gunlazer)
-            if event.key == K_c:
-                equip(gundrill)
-            if event.key == K_v:
-                equip(gunshield)
             if event.key == K_f:
                 print 'lazer cooldown: ', timer.guncool
                 print 'Backdrop: ', backdrop
@@ -579,16 +599,30 @@ while Running:
                 boss.on = 1
         if event.type == pygame.KEYUP:
             if event.key == K_LEFT:
-                lefting = False
+                ship.lefting = False
             if event.key == K_RIGHT:
-                righting = False
-            if not lefting and not righting:
-                pressing = False
+                ship.righting = False
+            if not ship.lefting and not ship.righting:
+                ship.pressing = False
                 ship.mom = 0
             if event.key == K_UP:
-                shooting = False
+                ship.shooting = False
             if event.key == K_DOWN:
-                mommod = 2
+                ship.mommod = 2
+                
+            if event.key == K_a:
+                ship2.lefting = False
+            if event.key == K_d:
+                ship2.righting = False
+            if not ship2.lefting and not ship2.righting:
+                ship2.pressing = False
+                ship2.mom = 0
+            if event.key == K_w:
+                ship2.shooting = False
+            if event.key == K_s:
+                ship2.mommod = 2
+        allships = [ship, ship2]
+        
     if OP:
         pass
     
@@ -597,13 +631,16 @@ while Running:
             powerups.remove(i)
         for n in range(i.speed):
             i.coords = (i.coords[0], i.coords[1]+2)
-            if collide(i.coords, i.size, ship.coords, ship.size):
-                powerups.remove(i)
-                misc = random.randint(0, len(upgrades)-1)
-                equip(upgrades[misc])
-                break
-            else:
-                Screen.blit(i.pic, i.coords)
+            for x in allships:
+                if collide(i.coords, i.size, x.coords, x.size):
+                    try:
+                        powerups.remove(i)
+                    except ValueError:
+                        pass
+                    misc = random.randint(0, len(upgrades)-1)
+                    x.equip(upgrades[misc])
+                    break
+                    
         
     timer.powerup -= 1
     if timer.powerup < 0:
@@ -617,7 +654,11 @@ while Running:
         
     if boss.on == 1:
         Screen.blit(boss.pic, boss.coords)
-    Screen.blit(thisship, ship.coords)
+        
+    for i in powerups:
+        Screen.blit(i.pic, i.coords)
+    for i in allships:
+        Screen.blit(i.img, i.coords)
         
     for i in particles:
         if not collide(i.coords, i.size, (0, 0), (screenX, screenY)):
@@ -634,20 +675,31 @@ while Running:
                     alive = False
             if alive:
                 Screen.blit(i.pics[i.frame], i.coords)
+        
+    dialog = font.render("Meters: "+str(timer.time), True, White)
+    Screen.blit(dialog, [screenX/3, screenY-16])
     
-    hpratio = (Decimal(ship.hp)/Decimal(ship.basehp))*100
+    hpratio = (Decimal(allships[0].hp)/Decimal(allships[0].basehp))*100
     if hpratio >= 100:
         hpratio = float(hpratio)
     misc = "Health: "+str(hpratio)+"%"
-    dialog = font.render(misc, True, White)    
-    Screen.blit(dialog, [0,screenY-32])
-    dialog = font.render("Meters: "+str(timer.time), True, White)
-    Screen.blit(dialog, [screenX/2, screenY-32])
-    if ship.gun.id > 0:
-        dialog = font.render("::"+ship.gun.id, True, White)    
-        Screen.blit(dialog, [0, screenY-64])
-        dialog = font.render("Fires remaining: "+str(ship.gun.maxfires-ship.gun.fires+1), True, White)    
-        Screen.blit(dialog, [screenX/2, screenY-64])
+    Screen.blit(font.render(misc, True, White), [screenX/2,screenY-64])
+    if allships[0].gun.id > 0:
+        dialog = font.render("::"+allships[0].gun.id, True, White)    
+        Screen.blit(dialog, [screenX/2, screenY-48])
+        dialog = font.render("Fires remaining: "+str(allships[0].gun.maxfires-allships[0].gun.fires+1), True, White)
+        Screen.blit(dialog, [screenX/2, screenY-32])
+        
+    hpratio = (Decimal(allships[1].hp)/Decimal(allships[1].basehp))*100
+    if hpratio >= 100:
+        hpratio = float(hpratio)
+    misc = "Health: "+str(hpratio)+"%"
+    Screen.blit(font.render(misc, True, White), [0,screenY-64])
+    if allships[1].gun.id > 0:
+        dialog = font.render("::"+allships[1].gun.id, True, White)    
+        Screen.blit(dialog, [0, screenY-48])
+        dialog = font.render("Fires remaining: "+str(allships[1].gun.maxfires-allships[1].gun.fires+1), True, White)
+        Screen.blit(dialog, [0, screenY-32])
     
     pygame.display.update()
     clock.tick(60)
