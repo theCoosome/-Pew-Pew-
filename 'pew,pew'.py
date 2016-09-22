@@ -12,13 +12,9 @@ pygame.init()
 
 psych = False
 
-Red = pygame.Color(200,0,0)
 Green = pygame.Color(0,255,0)
-Blue = pygame.Color(0,0,200)
 Black = pygame.Color(0,0,0)
 White = pygame.Color(255,255,255)
-L_gray = pygame.Color(180,180,180)
-D_gray = pygame.Color(80,80,80)
 #usefull
 screenX, screenY = 250, 650
 Screen = pygame.display.set_mode((screenX, screenY))
@@ -49,7 +45,8 @@ dmgpng = pygame.image.load('damagepew.png')
 #other
 
 class multipliers(object):
-    def __init__(self, hp, speed, cooldown, meteors):
+    def __init__(self, difficulty, hp, speed, cooldown, meteors):
+        self.difficulty = difficulty
         self.hp = hp
         self.speed = speed
         self.cooldown = cooldown
@@ -83,16 +80,16 @@ while Running:
             #movement
             if event.key == K_LEFT:
                 Running = False
-                mult = multipliers(1, 1, 1, 28)
+                mult = multipliers(0, 1, 1, 1, 28)
             if event.key == K_UP:
                 Running = False
-                mult = multipliers(2, 2, 2, 18)
+                mult = multipliers(1, 2, 2, 2, 18)
             if event.key == K_RIGHT:
                 Running = False
-                mult = multipliers(3.5, 3, 2, 10)
+                mult = multipliers(2, 3.5, 3, 2, 10)
             if event.key == K_DOWN:
                 Running = False
-                mult = multipliers(40, 5, 5, 8)
+                mult = multipliers(3, 40, 5, 5, 8)
     pygame.display.update()
     clock.tick(60)
 
@@ -214,6 +211,11 @@ def collide(p1, p2, p3, p4):
             #print "Object 1: ", p1, ",", p2
             #print "Object 2: ", p3, ",", p4
             return True
+    #do it the other way as well
+    if p3[0] + p4[0] > p1[0] and p3[0] < p1[0] + p2[0]:
+        if p3[1] + p4[1] > p1[1] and p3[1] < p1[1] + p2[1]:
+            return True
+
 Screen.fill(Black)
 
 Meteors = [
@@ -351,8 +353,8 @@ while Running:
         
     
     Screen.fill(Black)
-    timer.backdrop += 1
-    if timer.backdrop == 0:
+    timer.backdrop += mult.speed
+    if timer.backdrop >= 0:
         timer.backdrop = screenY-1000
     Screen.blit(backimage, (0, timer.backdrop))
     
@@ -604,10 +606,28 @@ while Running:
 print "Boss hp: ", boss.hp
 print "Meters: ", timer.time
 
-
-
-
-
+import io
+scores = open("highscore.txt", 'r')
+for i in range(4):
+    high = scores.readline()
+    if i == mult.difficulty and timer.time > int(high):
+        try:
+            allhigh += "\n"+str(timer.time)
+            print "suceeded on:"+str(i)
+        except:
+            print "excepted 1"
+            allhigh = str(timer.time)
+    else:
+        try:
+            allhigh += "\n"+str(high)
+            print "suceeded on:"+str(i)
+        except:
+            print "excepted 2"
+            allhigh = str(high)
+scores.close()
+scores = open("highscore.txt", 'w')
+scores.write(allhigh)
+scores.close()
 
 
 
