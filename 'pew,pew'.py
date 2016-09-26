@@ -200,6 +200,12 @@ class timers(object):
         self.backdrop = 100
         self.bossatk = 300
         self.powerup = 400
+
+class efficiency(object):
+    def __init__(self):
+        self.hpwasted = 0
+        self.projmissed = 0
+        self.
         
 timer = timers()
 #object one coord pair, size, object two coord pair and size
@@ -321,6 +327,7 @@ t = 100
 eventTimer = 10000
 walls = 0
 bosstime = 10000
+metdestroyed = 0
 
 Line(Screen, Green, (0,0), (600,600), 3)
 pygame.display.update()
@@ -383,6 +390,7 @@ while Running:
                         print "Meteor: " + str(x.hp)
                         if x.hp <= 0:
                             meteors.remove(x)
+                            metdestroyed += 1
                     if not alive:
                         break
                     else:
@@ -458,6 +466,7 @@ while Running:
                 print "Meteor: " + str(i.hp)
                 if i.hp <= 0:
                     meteors.remove(i)
+                    metdestroyed += 2
                     alive = False
                 ship.hp -= temp
                 print "Ship: " + str(ship.hp)
@@ -606,28 +615,50 @@ while Running:
 print "Boss hp: ", boss.hp
 print "Meters: ", timer.time
 
+score = timer.time + (10 * metdestroyed) + ((mult.difficulty+1) * 500 * bossesbeat)
+
 import io
 scores = open("highscore.txt", 'r')
 for i in range(4):
     high = scores.readline()
-    if i == mult.difficulty and timer.time > int(high):
+    if i == mult.difficulty and score > int(high):
+        print "New Highscore!"
+        
         try:
-            allhigh += "\n"+str(timer.time)
-            print "suceeded on:"+str(i)
+            allhigh += str(timer.time)+"\n"
         except:
-            print "excepted 1"
-            allhigh = str(timer.time)
+            allhigh = str(timer.time)+"\n"
+    #not highscore
     else:
         try:
-            allhigh += "\n"+str(high)
-            print "suceeded on:"+str(i)
+            allhigh += str(high)
         except:
-            print "excepted 2"
             allhigh = str(high)
 scores.close()
 scores = open("highscore.txt", 'w')
 scores.write(allhigh)
 scores.close()
 
+if mult.difficulty == 0:
+    print "You cleaned up "+str(timer.time)+" meters."
+    print str(metdestroyed) + " meteor units sweeped."
+    print str(bossesbeat) + " Anti-Gonists encountered."
+    print "Total score: " + str(score)
+if mult.difficulty == 1:
+    print "You cleared "+str(timer.time)+" meters."
+    print str(metdestroyed) + " meteor units eliminated."
+    print str(bossesbeat) + " Anti-Gonists fought."
+    print "Total score: " + str(score)
+if mult.difficulty == 2:
+    print "You trekked "+str(timer.time)+" meters!"
+    print str(metdestroyed) + " meteor units removed."
+    print str(bossesbeat) + " Anti-Gonists eliminated."
+    print "Total score: " + str(score)
+if mult.difficulty == 3:
+    print "You survived "+str(timer.time)+" meters!"
+    print str(metdestroyed) + " meteor units swiped."
+    print str(bossesbeat) + " Anti-Gonists destroyed."
+    print "Total score: " + str(score)
+raw_input("")
 
 
