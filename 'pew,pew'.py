@@ -12,13 +12,9 @@ pygame.init()
 
 psych = False
 
-Red = pygame.Color(200,0,0)
 Green = pygame.Color(0,255,0)
-Blue = pygame.Color(0,0,200)
 Black = pygame.Color(0,0,0)
 White = pygame.Color(255,255,255)
-L_gray = pygame.Color(180,180,180)
-D_gray = pygame.Color(80,80,80)
 #usefull
 screenX, screenY = 250, 650
 Screen = pygame.display.set_mode((screenX, screenY))
@@ -50,7 +46,8 @@ upgradepng = pygame.image.load('imgs/powerup.png')
 #other
 
 class multipliers(object):
-    def __init__(self, hp, speed, cooldown, meteors, time):
+    def __init__(self, difficulty, hp, speed, cooldown, meteors, time):
+        self.difficulty = difficulty
         self.hp = hp
         self.speed = speed
         self.cooldown = cooldown
@@ -85,16 +82,16 @@ while Running:
             #movement
             if event.key == K_LEFT:
                 Running = False
-                mult = multipliers(1, 1, 1, 28, 1)
+                mult = multipliers(0, 1, 1, 1, 28, 1)
             if event.key == K_UP:
                 Running = False
-                mult = multipliers(2, 2, 2, 18, 2)
+                mult = multipliers(1, 2, 2, 2, 18, 2)
             if event.key == K_RIGHT:
                 Running = False
-                mult = multipliers(3.5, 3, 2, 10, 4)
+                mult = multipliers(2, 3.5, 3, 2, 10, 4)
             if event.key == K_DOWN:
                 Running = False
-                mult = multipliers(40, 5, 5, 8, 10)
+                mult = multipliers(3, 40, 5, 5, 8, 10)
     pygame.display.update()
     clock.tick(60)
 
@@ -237,6 +234,11 @@ def collide(p1, p2, p3, p4):
         #if bottom is below top and top is above bottom
         if p1[1] + p2[1] > p3[1] and p1[1] < p3[1] + p4[1]:
             return True
+    #do it the other way as well
+    if p3[0] + p4[0] > p1[0] and p3[0] < p1[0] + p2[0]:
+        if p3[1] + p4[1] > p1[1] and p3[1] < p1[1] + p2[1]:
+            return True
+
 Screen.fill(Black)
 
 Meteors = [
@@ -352,6 +354,7 @@ t = 100
 eventTimer = 10000
 walls = 0
 bosstime = 10000
+metdestroyed = 0
 
 Line(Screen, Green, (0,0), (600,600), 3)
 pygame.display.update()
@@ -384,8 +387,8 @@ while Running:
         
     
     Screen.fill(Black)
-    timer.backdrop += 1
-    if timer.backdrop == 0:
+    timer.backdrop += mult.speed
+    if timer.backdrop >= 0:
         timer.backdrop = screenY-1000
     Screen.blit(backimage, (0, timer.backdrop))
     
@@ -414,6 +417,7 @@ while Running:
                         print "Meteor: " + str(x.hp)
                         if x.hp <= 0:
                             meteors.remove(x)
+                            metdestroyed += 1
                     if not alive:
                         break
                     else:
@@ -491,6 +495,7 @@ while Running:
                 print "Meteor: " + str(i.hp)
                 if i.hp <= 0:
                     meteors.remove(i)
+                    metdestroyed += 2
                     alive = False
                 ship.hp -= temp
                 print "Ship: " + str(ship.hp)
@@ -655,10 +660,50 @@ while Running:
 print "Boss hp: ", boss.hp
 print "Meters: ", timer.time
 
+score = timer.time + (10 * metdestroyed) + ((mult.difficulty+1) * 500 * bossesbeat)
 
+import io
+scores = open("highscore.txt", 'r')
+for i in range(4):
+    high = scores.readline()
+    if i == mult.difficulty and score > int(high):
+        print "New Highscore!"
+        
+        try:
+            allhigh += str(timer.time)+"\n"
+        except:
+            allhigh = str(timer.time)+"\n"
+    #not highscore
+    else:
+        try:
+            allhigh += str(high)
+        except:
+            allhigh = str(high)
+scores.close()
+scores = open("highscore.txt", 'w')
+scores.write(allhigh)
+scores.close()
 
-
-
-
+if mult.difficulty == 0:
+    print "You cleaned up "+str(timer.time)+" meters."
+    print str(metdestroyed) + " meteor units sweeped."
+    print str(bossesbeat) + " Anti-Gonists encountered."
+    print "Total score: " + str(score)
+if mult.difficulty == 1:
+    print "You cleared "+str(timer.time)+" meters."
+    print str(metdestroyed) + " meteor units eliminated."
+    print str(bossesbeat) + " Anti-Gonists fought."
+    print "Total score: " + str(score)
+if mult.difficulty == 2:
+    print "You trekked "+str(timer.time)+" meters!"
+    print str(metdestroyed) + " meteor units removed."
+    print str(bossesbeat) + " Anti-Gonists eliminated."
+    print "Total score: " + str(score)
+if mult.difficulty == 3:
+    print "You survived "+str(timer.time)+" meters!"
+    print str(metdestroyed) + " meteor units swiped."
+    print str(bossesbeat) + " Anti-Gonists destroyed."
+    print "Total score: " + str(score)
+raw_input("")
 
 
