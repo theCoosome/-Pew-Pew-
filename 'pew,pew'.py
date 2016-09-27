@@ -63,7 +63,7 @@ class multipliers(object):
 Running = True
 while Running:
     Screen.fill(Black)
-    dialog = font.render("Pew Pew", True, White)	
+    dialog = font.render("Pew \nPew", True, White)	
     Screen.blit(dialog, [0,50])
     dialog = font.render("Use left and right arrows to move", True, White)	
     Screen.blit(dialog, [0,50+20])
@@ -354,6 +354,47 @@ def equip(weapon):
     ship.gun = weapon
     ship.hp += weapon.hpmod
 
+def calcEff():
+    global allshots
+    global pershots
+    global bossesbeat
+    global mult
+    global metdestroyed
+    global timer
+
+    try:
+        efficiency = float(allshots - pershots)/float(allshots)
+    except ZeroDivisionError:
+        efficiency = 1
+    score = timer.time + math.floor(10 * metdestroyed * efficiency) + ((mult.difficulty+1) * 500 * bossesbeat)
+
+    if OP:
+        out = "You were opped. High scores not counted."
+    else:
+        import io
+        scores = open("highscore.txt", 'r')
+        for i in range(4):
+            high = scores.readline()
+            if i == mult.difficulty and score > int(high):
+                out = "New Highscore!"
+                
+                try:
+                    allhigh += str(timer.time)+"\n"
+                except:
+                    allhigh = str(timer.time)+"\n"
+            #not highscore
+            else:
+                out = ""
+                try:
+                    allhigh += str(high)
+                except:
+                    allhigh = str(high)
+        scores.close()
+        scores = open("highscore.txt", 'w')
+        scores.write(allhigh)
+        scores.close()
+    return out, score, efficiency
+
 equip(gunbase)
 t = 100
 eventTimer = 10000
@@ -368,6 +409,7 @@ mommod = 2
 allshots, pershots = 0, float(0)
 alldam, potdam = 0, 0
 fps = 60
+isAlive = True
 
 Line(Screen, Green, (0,0), (600,600), 3)
 pygame.display.update()
@@ -379,7 +421,8 @@ time.sleep(.1)
 #main loop
 Running = True
 while Running:
-    thisship = shippng
+    if isAlive:
+        thisship = shippng
     if timer.guncool > -1:
         timer.guncool -= 1
     if timer.guncool < 0 and shooting:
@@ -387,10 +430,14 @@ while Running:
     timer.time += mult.time
     if timer.time == bosstime:
         boss.on = 1
-    if fps < 60:
+    if fps < 60 and isAlive:
         fps += 1
         if fps > 60:
             fps = 60
+    if not isAlive and fps > 0:
+        fps -= 1
+        if fps < 2:
+            Running = False
     timer.meteors -= 1
     if timer.meteors <= 0:
         timer.meteors = mult.meteors
@@ -495,7 +542,8 @@ while Running:
         for n in range(i.speed):
             i.coords = (i.coords[0], i.coords[1]+mult.speed)
             if collide(ship.coords, ship.size, i.coords, i.size):
-                particles.append(particle([ship.coords[0]+(ship.size[0]/2), ship.coords[1]], [10, 10], [0, 1], explosionpic))
+                if isAlive:
+                    particles.append(particle([ship.coords[0]+(ship.size[0]/2), ship.coords[1]], [10, 10], [0, 1], explosionpic))
                 thisship = dmgpng
                 temp = i.dmg
                 i.hp -= ship.dmg
@@ -507,7 +555,8 @@ while Running:
                 ship.hp -= temp
                 prints("Ship: " + str(ship.hp))
                 if ship.hp <= 0:
-                    Running = False
+                    isAlive = False
+                    highscore, score, efficiency = calcEff()
             if not alive:
                 break
         try:
@@ -576,6 +625,8 @@ while Running:
                 equip(gunop)
             if event.key == K_h and OP:
                 boss.hp = 1
+            if event.key == K_y and OP:
+                ship.hp += 5
             #debug
             if event.key == K_d:
                 if debugon:
@@ -617,6 +668,8 @@ while Running:
         timer.powerup = random.randint(500/mult.cooldown, 900/mult.cooldown)
         powerups.append(upgrade((random.randint(20, screenX-20), 50), random.randint(1, 2)))
         
+    if ship.hp > 0:
+        isAlive = True
     
     #Displays
     #if timer.guncool > 0:        
@@ -625,7 +678,8 @@ while Running:
     if boss.on == 1:
         Screen.blit(boss.pic, boss.coords)
     Screen.blit(thisship, ship.coords)
-        
+    
+
     for i in particles:
         if not collide(i.coords, i.size, (0, 0), (screenX, screenY)):
             particles.remove(i)
@@ -642,76 +696,67 @@ while Running:
             if alive:
                 Screen.blit(i.pics[i.frame], i.coords)
     
-    hpratio = (Decimal(ship.hp)/Decimal(ship.basehp))*100
-    if hpratio >= 100:
-        hpratio = float(hpratio)
-    misc = "Health: "+str(hpratio)+"%"
-    dialog = font.render(misc, True, White)    
-    Screen.blit(dialog, [0,screenY-32])
-    dialog = font.render("Meters: "+str(timer.time), True, White)
-    Screen.blit(dialog, [screenX/2, screenY-32])
-    if ship.gun.id > 0:
-        dialog = font.render("::"+ship.gun.id, True, White)    
-        Screen.blit(dialog, [0, screenY-64])
-        dialog = font.render("Fires remaining: "+str(ship.gun.maxfires-ship.gun.fires+1), True, White)    
-        Screen.blit(dialog, [screenX/2, screenY-64])
-    
+    if isAlive:
+        hpratio = (Decimal(ship.hp)/Decimal(ship.basehp))*100
+        if hpratio >= 100:
+            hpratio = float(hpratio)
+        misc = "Health: "+str(hpratio)+"%"
+        dialog = font.render(misc, True, White)    
+        Screen.blit(dialog, [0,screenY-32])
+        dialog = font.render("Meters: "+str(timer.time), True, White)
+        Screen.blit(dialog, [screenX/2, screenY-32])
+        if ship.gun.id > 0:
+            dialog = font.render("::"+ship.gun.id, True, White)    
+            Screen.blit(dialog, [0, screenY-64])
+            dialog = font.render("Fires remaining: "+str(ship.gun.maxfires-ship.gun.fires+1), True, White)    
+            Screen.blit(dialog, [screenX/2, screenY-64])
+    else:
+        pass
+
     pygame.display.update()
     clock.tick(fps)
 
-    
-try:
-    efficiency = float(allshots - pershots)/float(allshots)
-except ZeroDivisionError:
-    efficiency = 1
-score = int(math.floor((timer.time + (10 * metdestroyed) + ((mult.difficulty+1) * 500 * bossesbeat)) * efficiency))
-print "\n"
-
-if OP:
-    print "You were opped. High scores not counted."
-else:
-    import io
-    scores = open("highscore.txt", 'r')
-    for i in range(4):
-        high = scores.readline()
-        if i == mult.difficulty and score > int(high):
-            print "New Highscore!"
-            
-            try:
-                allhigh += str(timer.time)+"\n"
-            except:
-                allhigh = str(timer.time)+"\n"
-        #not highscore
-        else:
-            try:
-                allhigh += str(high)
-            except:
-                allhigh = str(high)
-    scores.close()
-    scores = open("highscore.txt", 'w')
-    scores.write(allhigh)
-    scores.close()
 
 if mult.difficulty == 0:
-    print "You cleaned up "+str(timer.time)+" meters."
-    print str(metdestroyed) + " meteor units sweeped at "+str(math.floor(efficiency*100))+"% efficiency."
-    print str(bossesbeat) + " Anti-Gonists encountered."
-    print "Total score: " + str(score)
+    l1 = "You cleaned up "+str(timer.time)+" meters."
+    l2, l5 = str(metdestroyed) + " meteor units sweeped ", "at "+str(math.floor(efficiency*100))+"% efficiency."
+    l3 = str(bossesbeat) + " Anti-Gonists encountered."
+    l4 = "Total score: " + str(score)
 if mult.difficulty == 1:
-    print "You cleared "+str(timer.time)+" meters."
-    print str(metdestroyed) + " meteor units eliminated at "+str(math.floor(efficiency*100))+"% efficiency."
-    print str(bossesbeat) + " Anti-Gonists fought."
-    print "Total score: " + str(score)
+    l1 = "You cleared "+str(timer.time)+" meters."
+    l2, l5 = str(metdestroyed) + " meteor units eliminated ", "at "+str(math.floor(efficiency*100))+"% efficiency."
+    l3 = str(bossesbeat) + " Anti-Gonists fought."
+    l4 = "Total score: " + str(score)
 if mult.difficulty == 2:
-    print "You trekked "+str(timer.time)+" meters!"
-    print str(metdestroyed) + " meteor units removed at "+str(math.floor(efficiency*100))+"% efficiency."
-    print str(bossesbeat) + " Anti-Gonists eliminated."
-    print "Total score: " + str(score)
+    l1 = "You trekked "+str(timer.time)+" meters!"
+    l2, l5 = str(metdestroyed) + " meteor units removed ", "at "+str(math.floor(efficiency*100))+"% efficiency."
+    l3 = str(bossesbeat) + " Anti-Gonists eliminated."
+    l4 = "Total score: " + str(score)
 if mult.difficulty == 3:
-    print "You survived "+str(timer.time)+" meters!"
-    print str(metdestroyed) + " meteor units swiped at "+str(math.floor(efficiency*100))+"% efficiency."
-    print str(bossesbeat) + " Anti-Gonists destroyed."
-    print "Total score: " + str(score)
-raw_input("")
+    l1 = "You survived "+str(timer.time)+" meters!"
+    l2, l5 = str(metdestroyed) + " meteor units swiped ", "at "+str(math.floor(efficiency*100))+"% efficiency."
+    l3 = str(bossesbeat) + " Anti-Gonists destroyed."
+    l4 = "Total score: " + str(score)
 
+Running = True
+while Running:
+    dialog = font.render(highscore, True, White)
+    Screen.blit(dialog, [5,screenY-112])
+    dialog = font.render(l1, True, White) 
+    Screen.blit(dialog, [5,screenY-96])
+    dialog = font.render(l2, True, White) 
+    Screen.blit(dialog, [5,screenY-80])
+    dialog = font.render(l5, True, White) 
+    Screen.blit(dialog, [5,screenY-64])
+    dialog = font.render(l3, True, White) 
+    Screen.blit(dialog, [5,screenY-48])
+    dialog = font.render(l4, True, White) 
+    Screen.blit(dialog, [5,screenY-32])
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN:
+            Running = False
+    pygame.display.update()
+    clock.tick(4)
 
+dialog = font.render("Pew Pew", True, White)    
+Screen.blit(dialog, [0,50])
