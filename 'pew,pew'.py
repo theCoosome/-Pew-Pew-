@@ -45,6 +45,12 @@ upgradepng = pygame.image.load('imgs/powerup.png')
 
 #other
 
+debugon = False
+def prints(stuff):
+    global debugon
+    if debugon:
+        print stuff
+
 class multipliers(object):
     def __init__(self, difficulty, hp, speed, cooldown, meteors, time):
         self.difficulty = difficulty
@@ -97,7 +103,7 @@ while Running:
 
 print "setup complete."
 #Version
-print "pewpew version 0.1.2"
+print "pewpew version 0.2"
 
 def getpartimg(name, quant):
     images = []
@@ -107,6 +113,7 @@ def getpartimg(name, quant):
     
 explosionpic = getpartimg("explosion", 5)
 crumblepic = getpartimg("destintegrate", 4)
+firebit = getpartimg("firebit", 11)
     
 retimer = 5
 class particle(object): #speed is tuple of x and y speed
@@ -124,6 +131,7 @@ particles = []
 class proj(object):
     def __init__(self, hp, coords, size, speed, move, damage, pic):
         self.hp = hp
+        self.basehp = hp
         self.coords = coords
         self.size = size
         self.speed = speed
@@ -136,7 +144,6 @@ projectiles = []
 class gun(object):
     def __init__(self, id, hpmod, hp, fires, size, speed, move, damage, cooldown, pic):
         self.hp = hp
-        #self.basehp = hp
         self.hpmod = hpmod
         self.fires = 0
         self.maxfires = fires-1
@@ -332,9 +339,8 @@ def shoot():
     global ship
     global projectiles
     global timer
-    print "pew"
+    #print "pew"
     timer.guncool = ship.gun.cooldown
-    #           hp,             coords,                                                                 size,           speed,          damage,     pic)
     temp = proj(ship.gun.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), ship.gun.size, ship.gun.speed, ship.gun.move, ship.gun.dmg, ship.gun.pic)
     projectiles.append(temp)
     ship.gun.fires += 1
@@ -347,7 +353,6 @@ def equip(weapon):
     weapon.fires = 0
     ship.gun = weapon
     ship.hp += weapon.hpmod
-    print weapon.pic
 
 equip(gunbase)
 t = 100
@@ -355,17 +360,20 @@ eventTimer = 10000
 walls = 0
 bosstime = 10000
 metdestroyed = 0
+pressing = False
+lefting = False
+righting = False
+shooting = False
+mommod = 2
+allshots, pershots = 0, float(0)
+alldam, potdam = 0, 0
+fps = 60
 
 Line(Screen, Green, (0,0), (600,600), 3)
 pygame.display.update()
 print "updated screen"
 time.sleep(.1)
 
-pressing = False
-lefting = False
-righting = False
-shooting = False
-mommod = 2
 
 
 #main loop
@@ -379,24 +387,27 @@ while Running:
     timer.time += mult.time
     if timer.time == bosstime:
         boss.on = 1
+    if fps < 60:
+        fps += 1
+        if fps > 60:
+            fps = 60
     timer.meteors -= 1
     if timer.meteors <= 0:
         timer.meteors = mult.meteors
         #print "New meteor"
         genMeteor(Meteors[random.randint(0,len(Meteors)-1)], (random.randint(0-20, screenX+20), 0-100))
         
-    
     Screen.fill(Black)
     timer.backdrop += mult.speed
     if timer.backdrop >= 0:
         timer.backdrop = screenY-1000
     Screen.blit(backimage, (0, timer.backdrop))
     
-    #print timer.guncool
-    
     #boolet movement
     for i in projectiles:
         if not collide(i.coords, i.size, (0, 0), (screenX, screenY)):
+            pershots = Decimal(float(pershots) + float(i.hp)/float(i.basehp))
+            allshots += 1
             projectiles.remove(i)
         else:
             alive = True
@@ -404,17 +415,16 @@ while Running:
                 i.coords = (i.coords[0], i.coords[1]-i.move)
                 for x in meteors:
                     if collide(i.coords, i.size, x.coords, x.size):
-                        print "collided"
                         particles.append(particle([x.coords[0]+(x.size[0]/2), x.coords[1]], [10, 10], [0, random.randint(x.speed-1, x.speed+1)], crumblepic))
-                        temp = i.dmg
+                        x.hp -= i.dmg
                         i.hp -= x.dmg
-                        print "Boolet: " + str(i.hp)
+                        prints("Boolet: " + str(i.hp))
                         if i.hp <= 0:
                             Screen.blit(i.pic, i.coords)
                             projectiles.remove(i)
                             alive = False
-                        x.hp -= temp
-                        print "Meteor: " + str(x.hp)
+                            allshots += 1
+                        prints("Meteor: " + str(x.hp))
                         if x.hp <= 0:
                             meteors.remove(x)
                             metdestroyed += 1
@@ -424,16 +434,21 @@ while Running:
                         if collide(i.coords, i.size, boss.coords, boss.size) and boss.on == 1:
                             particles.append(particle([i.coords[0]+(i.size[0]/2), i.coords[1]-i.move], [10, 10], [0, 1], explosionpic))
                             print "hit boss"
-                            temp = i.dmg
+                            boss.hp -= i.dmg
                             i.hp -= boss.dmg
                             print "Boolet: " + str(i.hp)
                             if i.hp <= 0:
                                 Screen.blit(i.pic, i.coords)
                                 projectiles.remove(i)
                                 alive = False
-                            boss.hp -= temp
                             print "Boss: " + str(boss.hp)
                             if boss.hp <= 0:
+                                fps = 10
+                                localrand = math.floor(boss.size[0]/10)
+                                for z in range(9):
+                                    pos1 = random.randint((boss.coords[0]+(z*localrand)), (boss.coords[0]+((z+1)*localrand)))
+                                    pos2 = random.randint(boss.coords[1], (boss.coords[1]+boss.size[1]))
+                                    particles.append(particle([pos1, pos2], [10, 10], [random.randint(-2, 2), random.randint(-1, 3)], firebit))
                                 boss.on = 0
                                 bossesbeat += 1
                                 rand = (500/mult.cooldown)-(bossesbeat*10)
@@ -451,14 +466,7 @@ while Running:
             except NameError:
                 pass
     
-    #exponential movement speed?
-    '''timer.movecheck -= 1
-    if timer.movecheck <= 0:
-        timer.movecheck = 5
-        if pressing and ship.move > 3:
-            ship.move -= 1
-        if not pressing and ship.move <= 50:
-            ship.move += 2'''
+     
     #player movement
     timer.move -= 1
     if timer.move <= 0:
@@ -487,18 +495,17 @@ while Running:
         for n in range(i.speed):
             i.coords = (i.coords[0], i.coords[1]+mult.speed)
             if collide(ship.coords, ship.size, i.coords, i.size):
-                print "collided"
                 particles.append(particle([ship.coords[0]+(ship.size[0]/2), ship.coords[1]], [10, 10], [0, 1], explosionpic))
                 thisship = dmgpng
                 temp = i.dmg
                 i.hp -= ship.dmg
-                print "Meteor: " + str(i.hp)
+                prints("Meteor: " + str(i.hp))
                 if i.hp <= 0:
                     meteors.remove(i)
                     metdestroyed += 2
                     alive = False
                 ship.hp -= temp
-                print "Ship: " + str(ship.hp)
+                prints("Ship: " + str(ship.hp))
                 if ship.hp <= 0:
                     Running = False
             if not alive:
@@ -526,7 +533,6 @@ while Running:
         timer.bossatk -= 1
         if timer.bossatk <= 0:
             timer.bossatk = boss.atkint
-            print timer.bossatk
             genMeteor([1, [1, 2, 1, 0, 0, 0, 0, 0, 1, 2, 1], [2, 5, 2, 1, 1, 2, 1, 1, 2, 5, 2], [1, 2, 1, 1, 2, 6, 2, 1, 1, 2, 1], [0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0]], (boss.coords[0]+20, boss.coords[1]-15))
         t -= 1
         if t < 1:
@@ -539,8 +545,8 @@ while Running:
             if boss.coords[1] < 10:
                 boss.coords = (boss.coords[0], boss.coords[1]+1)
             t = boss.speed
-        
-        
+    
+    
     #user input
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
@@ -564,24 +570,22 @@ while Running:
             if event.key == K_g:
                 OP = True
                 print "Opped."
+            if event.key == K_b and OP:
+                boss.on = 1
+            if event.key == K_v and OP:
                 equip(gunop)
-            if event.key == K_z:
-                equip(gunrail)
-            if event.key == K_x:
-                equip(gunlazer)
-            if event.key == K_c:
-                equip(gundrill)
-            if event.key == K_v:
-                equip(gunshield)
-            if event.key == K_f:
+            if event.key == K_h and OP:
+                boss.hp = 1
+            #debug
+            if event.key == K_d:
+                if debugon:
+                    debugon = False
+                else:
+                    debugon = True
                 print 'lazer cooldown: ', timer.guncool
-                print 'Backdrop: ', backdrop
-                print 'T: ', t
+                print 'Next boss: ', bosstime
                 print 'Boss Cooldown: ', timer.bossatk
                 print 'Boss HP: ', bosshp
-                print 
-            if event.key == K_b:
-                boss.on = 1
         if event.type == pygame.KEYUP:
             if event.key == K_LEFT:
                 lefting = False
@@ -594,8 +598,6 @@ while Running:
                 shooting = False
             if event.key == K_DOWN:
                 mommod = 2
-    if OP:
-        pass
     
     for i in powerups:
         if not collide(i.coords, i.size, (0, 0), (screenX, screenY)):
@@ -655,53 +657,59 @@ while Running:
         Screen.blit(dialog, [screenX/2, screenY-64])
     
     pygame.display.update()
-    clock.tick(60)
+    clock.tick(fps)
 
-print "Boss hp: ", boss.hp
-print "Meters: ", timer.time
+    
+try:
+    efficiency = float(allshots - pershots)/float(allshots)
+except ZeroDivisionError:
+    efficiency = 1
+score = int(math.floor((timer.time + (10 * metdestroyed) + ((mult.difficulty+1) * 500 * bossesbeat)) * efficiency))
+print "\n"
 
-score = timer.time + (10 * metdestroyed) + ((mult.difficulty+1) * 500 * bossesbeat)
-
-import io
-scores = open("highscore.txt", 'r')
-for i in range(4):
-    high = scores.readline()
-    if i == mult.difficulty and score > int(high):
-        print "New Highscore!"
-        
-        try:
-            allhigh += str(timer.time)+"\n"
-        except:
-            allhigh = str(timer.time)+"\n"
-    #not highscore
-    else:
-        try:
-            allhigh += str(high)
-        except:
-            allhigh = str(high)
-scores.close()
-scores = open("highscore.txt", 'w')
-scores.write(allhigh)
-scores.close()
+if OP:
+    print "You were opped. High scores not counted."
+else:
+    import io
+    scores = open("highscore.txt", 'r')
+    for i in range(4):
+        high = scores.readline()
+        if i == mult.difficulty and score > int(high):
+            print "New Highscore!"
+            
+            try:
+                allhigh += str(timer.time)+"\n"
+            except:
+                allhigh = str(timer.time)+"\n"
+        #not highscore
+        else:
+            try:
+                allhigh += str(high)
+            except:
+                allhigh = str(high)
+    scores.close()
+    scores = open("highscore.txt", 'w')
+    scores.write(allhigh)
+    scores.close()
 
 if mult.difficulty == 0:
     print "You cleaned up "+str(timer.time)+" meters."
-    print str(metdestroyed) + " meteor units sweeped."
+    print str(metdestroyed) + " meteor units sweeped at "+str(math.floor(efficiency*100))+"% efficiency."
     print str(bossesbeat) + " Anti-Gonists encountered."
     print "Total score: " + str(score)
 if mult.difficulty == 1:
     print "You cleared "+str(timer.time)+" meters."
-    print str(metdestroyed) + " meteor units eliminated."
+    print str(metdestroyed) + " meteor units eliminated at "+str(math.floor(efficiency*100))+"% efficiency."
     print str(bossesbeat) + " Anti-Gonists fought."
     print "Total score: " + str(score)
 if mult.difficulty == 2:
     print "You trekked "+str(timer.time)+" meters!"
-    print str(metdestroyed) + " meteor units removed."
+    print str(metdestroyed) + " meteor units removed at "+str(math.floor(efficiency*100))+"% efficiency."
     print str(bossesbeat) + " Anti-Gonists eliminated."
     print "Total score: " + str(score)
 if mult.difficulty == 3:
     print "You survived "+str(timer.time)+" meters!"
-    print str(metdestroyed) + " meteor units swiped."
+    print str(metdestroyed) + " meteor units swiped at "+str(math.floor(efficiency*100))+"% efficiency."
     print str(bossesbeat) + " Anti-Gonists destroyed."
     print "Total score: " + str(score)
 raw_input("")
