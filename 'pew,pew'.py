@@ -63,7 +63,7 @@ class multipliers(object):
 Running = True
 while Running:
     Screen.fill(Black)
-    dialog = font.render("Pew \nPew", True, White)	
+    dialog = font.render("Pew Pew", True, White)	
     Screen.blit(dialog, [0,50])
     dialog = font.render("Use left and right arrows to move", True, White)	
     Screen.blit(dialog, [0,50+20])
