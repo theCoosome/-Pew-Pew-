@@ -64,7 +64,11 @@ Running = True
 while Running:
     Screen.fill(Black)
     dialog = font.render("Pew Pew", True, White)	
+<<<<<<< HEAD
     Screen.blit(dialog, [0,50])
+=======
+    Screen.blit(dialog, [32,32])
+>>>>>>> origin/master
     dialog = font.render("Use left and right arrows to move", True, White)	
     Screen.blit(dialog, [0,50+20])
     dialog = font.render("Up arrow to fire weapons.", True, White)	
@@ -76,10 +80,14 @@ while Running:
     Screen.blit(dialog, [0,50+100])
     Screen.blit(wall1, [60,50+120])
     Screen.blit(wall5, [200,50+120])
-    dialog = font.render("See your stats at bottom", True, White)	
+    dialog = font.render("See your stats at bottom of screen.", True, White)	
     Screen.blit(dialog, [0,50+140])
-    dialog = font.render("Press an arrow key to start game", True, White)	
+    dialog = font.render("Press an arrow key to select difficulty", True, White)	
     Screen.blit(dialog, [0,300])
+    dialog = font.render("difficulty increases clockwise,", True, White)	
+    Screen.blit(dialog, [0,300+16])
+    dialog = font.render("from left as easy to down as impossible.", True, White)	
+    Screen.blit(dialog, [0,300+32])
     dialog = font.render("And look out for someone at 10000m...", True, White)	
     Screen.blit(dialog, [0,500])
     
@@ -103,7 +111,7 @@ while Running:
 
 print "setup complete."
 #Version
-print "pewpew version 0.2"
+print "pewpew version 0.3"
 
 def getpartimg(name, quant):
     images = []
@@ -367,7 +375,7 @@ def calcEff():
     except ZeroDivisionError:
         efficiency = 1
     score = timer.time + math.floor(10 * metdestroyed * efficiency) + ((mult.difficulty+1) * 500 * bossesbeat)
-
+    prints("your score: "+str(score)+"\nYour tier: "+str(mult.difficulty))
     if OP:
         out = "You were opped. High scores not counted."
     else:
@@ -375,9 +383,10 @@ def calcEff():
         scores = open("highscore.txt", 'r')
         for i in range(4):
             high = scores.readline()
+            prints("highscore for tier "+str(i)+": "+str(high))
             if i == mult.difficulty and score > int(high):
                 out = "New Highscore!"
-                
+                print "new Highscore"
                 try:
                     allhigh += str(timer.time)+"\n"
                 except:
@@ -430,6 +439,7 @@ while Running:
     timer.time += mult.time
     if timer.time == bosstime:
         boss.on = 1
+        prints("Enter Boss")
     if fps < 60 and isAlive:
         fps += 1
         if fps > 60:
@@ -480,15 +490,15 @@ while Running:
                     else:
                         if collide(i.coords, i.size, boss.coords, boss.size) and boss.on == 1:
                             particles.append(particle([i.coords[0]+(i.size[0]/2), i.coords[1]-i.move], [10, 10], [0, 1], explosionpic))
-                            print "hit boss"
+                            prints("hit boss")
                             boss.hp -= i.dmg
                             i.hp -= boss.dmg
-                            print "Boolet: " + str(i.hp)
+                            prints("Boolet: " + str(i.hp))
                             if i.hp <= 0:
                                 Screen.blit(i.pic, i.coords)
                                 projectiles.remove(i)
                                 alive = False
-                            print "Boss: " + str(boss.hp)
+                            prints("Boss: " + str(boss.hp))
                             if boss.hp <= 0:
                                 fps = 10
                                 localrand = math.floor(boss.size[0]/10)
@@ -554,7 +564,7 @@ while Running:
                     alive = False
                 ship.hp -= temp
                 prints("Ship: " + str(ship.hp))
-                if ship.hp <= 0:
+                if ship.hp <= 0 and isAlive:
                     isAlive = False
                     highscore, score, efficiency = calcEff()
             if not alive:
@@ -636,7 +646,7 @@ while Running:
                 print 'lazer cooldown: ', timer.guncool
                 print 'Next boss: ', bosstime
                 print 'Boss Cooldown: ', timer.bossatk
-                print 'Boss HP: ', bosshp
+                print 'Boss HP: ', boss.hp
         if event.type == pygame.KEYUP:
             if event.key == K_LEFT:
                 lefting = False
