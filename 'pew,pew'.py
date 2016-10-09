@@ -371,20 +371,19 @@ def calcEff():
     if OP:
         out = "You were opped. High scores not counted."
     else:
+        out = ""
         import io
         scores = open("highscore.txt", 'r')
         for i in range(4):
             high = scores.readline()
             if i == mult.difficulty and score > int(high):
                 out = "New Highscore!"
-                
                 try:
-                    allhigh += str(timer.time)+"\n"
+                    allhigh += str(score)+"\n"
                 except:
-                    allhigh = str(timer.time)+"\n"
+                    allhigh = str(score)+"\n"
             #not highscore
             else:
-                out = ""
                 try:
                     allhigh += str(high)
                 except:
