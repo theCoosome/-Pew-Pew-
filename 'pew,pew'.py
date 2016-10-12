@@ -64,11 +64,7 @@ Running = True
 while Running:
     Screen.fill(Black)
     dialog = font.render("Pew Pew", True, White)	
-<<<<<<< HEAD
-    Screen.blit(dialog, [0,50])
-=======
     Screen.blit(dialog, [32,32])
->>>>>>> origin/master
     dialog = font.render("Use left and right arrows to move", True, White)	
     Screen.blit(dialog, [0,50+20])
     dialog = font.render("Up arrow to fire weapons.", True, White)	
@@ -388,9 +384,9 @@ def calcEff():
                 out = "New Highscore!"
                 print "new Highscore"
                 try:
-                    allhigh += str(timer.time)+"\n"
+                    allhigh += str(score)+"\n"
                 except:
-                    allhigh = str(timer.time)+"\n"
+                    allhigh = str(score)+"\n"
             #not highscore
             else:
                 out = ""
