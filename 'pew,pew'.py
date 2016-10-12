@@ -358,6 +358,7 @@ def equip(weapon):
     ship.gun = weapon
     ship.hp += weapon.hpmod
 
+
 def calcEff():
     global allshots
     global pershots
@@ -400,7 +401,10 @@ def calcEff():
         scores.close()
     return out, score, efficiency
 
-equip(gunbase)
+if mult.difficulty == 3:
+    equip(upgrades[random.randint(0, len(upgrades)-1)])
+else:
+    equip(gunbase)
 t = 100
 eventTimer = 10000
 walls = 0
@@ -620,7 +624,8 @@ while Running:
             if event.key == K_UP:
                 shooting = True
             if event.key == K_q:
-                Running = False
+                Running, ship.hp, isAlive = False, 0, False
+                highscore, score, efficiency = calcEff()
             #OP
             if event.key == K_g:
                 OP = True
