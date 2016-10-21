@@ -370,7 +370,14 @@ def calcEff():
         efficiency = float(allshots - pershots)/float(allshots)
     except ZeroDivisionError:
         efficiency = 1
-    score = timer.time + math.floor(10 * metdestroyed * efficiency) + ((mult.difficulty+1) * 500 * bossesbeat)
+    score, keeping = timer.time + math.floor(10 * metdestroyed * efficiency) + ((mult.difficulty+1) * 500 * bossesbeat), True
+    score, nscore = str(score), ""
+    for i in score:
+        if i == ".":
+            keeping = False
+        if keeping:
+            nscore += i
+    score = int(nscore)
     prints("your score: "+str(score)+"\nYour tier: "+str(mult.difficulty))
     if OP:
         out = "You were opped. High scores not counted."
@@ -435,6 +442,7 @@ while Running:
     timer.time += mult.time
     if timer.time == bosstime:
         boss.on = 1
+        mult.meteors *= 2
         prints("Enter Boss")
     if fps < 60 and isAlive:
         fps += 1
@@ -497,6 +505,7 @@ while Running:
                             prints("Boss: " + str(boss.hp))
                             if boss.hp <= 0:
                                 fps = 10
+                                mult.meteors /= 2
                                 localrand = math.floor(boss.size[0]/10)
                                 for z in range(9):
                                     pos1 = random.randint((boss.coords[0]+(z*localrand)), (boss.coords[0]+((z+1)*localrand)))
@@ -534,7 +543,6 @@ while Running:
     
     
     #meteors
-    newmet = meteors
     for i in meteors:
         if not collide(i.coords, i.size, (0, 0-100), (screenX, screenY)):
             meteors.remove(i)
@@ -621,6 +629,7 @@ while Running:
                 shooting = True
             if event.key == K_q:
                 Running = False
+                highscore, score, efficiency = calcEff()
             #OP
             if event.key == K_g:
                 OP = True
