@@ -252,7 +252,7 @@ def collide(p1, p2, p3, p4):
 
 Screen.fill(Black)
 
-import genMetor
+#import genMetor
 
 AllMeteors = [[
             [2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
@@ -665,7 +665,7 @@ pygame.display.update()
 print "updated screen"
 time.sleep(.1)
 
-genMeteor(genMetor.genMetor(mult.difficulty, 5, 5, 5), (screenX/2, 20))
+#genMeteor(genMetor.genMetor(mult.difficulty, 5, 5, 5), (screenX/2, 20))
 
 #main loop
 Running = True

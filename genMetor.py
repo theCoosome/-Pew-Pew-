@@ -10,14 +10,14 @@ def genMetor(difficulty, maxwidth, maxheight,maxdensity):
 			minilist.append(random.randint(1, maxdensity))
 		meteor.append(minilist)'''
 	meteor.append([2,2])
-	
+	minilist = []
 	for i in meteor:
-		if  i < maxheight / 2:
-			for k in range(random.randint(1 + len(i),maxwidth)
+		if i < maxheight / 2:
+			for k in range(random.randint(1 + len(str(i)),maxwidth)):
 
 				minilist.append(random.randint(1, maxdensity))
 
 	return meteor
 
 print genMetor(0,5,7,5)
-
+print genMetor(2,5,7,5)
