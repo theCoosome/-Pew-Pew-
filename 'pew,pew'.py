@@ -416,6 +416,8 @@ def equip(weapon):
     ship.gun = weapon
     ship.hp += weapon.hpmod
 
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 def calcEff():
     global allshots
     global pershots
@@ -423,7 +425,7 @@ def calcEff():
     global mult
     global metdestroyed
     global timer
-
+    global s
     try:
         efficiency = float(allshots - pershots)/float(allshots)
     except ZeroDivisionError:
@@ -433,14 +435,14 @@ def calcEff():
     if OP:
         out = "You were opped. High scores not counted."
     else:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
+        #try:
             s.connect((serverip, serverport))
             print "Connected"
-            sendinfo(tosend)
-            recieved = myreceive()
-        except socket.error:
-            print "Unable to connect"
+            sendinfo(str(mult.difficulty)+" "+str(int(score)))
+            out = myreceive()
+        #except socket.error:
+            #print "Unable to connect"
+            #out = ""
     return out, score, efficiency
 
 equip(gunbase)
@@ -602,7 +604,7 @@ while Running:
                     alive = False
                 ship.hp -= temp
                 prints("Ship: " + str(ship.hp))
-                if ship.hp <= 0:
+                if ship.hp <= 0 and isAlive:
                     isAlive = False
                     highscore, score, efficiency = calcEff()
             if not alive:
