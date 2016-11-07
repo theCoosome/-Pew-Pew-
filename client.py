@@ -74,18 +74,10 @@ def myreceive():
 print "Connecting to ", serverip
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#try:
-s.connect((serverip, serverport))
-print "Connected"
-
-tosend = raw_input(":")
-
-sendinfo(tosend)
-recieved = myreceive()
-
-print recieved
-
-
-tosend = raw_input(":")
-#except socket.error:
-#    print "ain't woikin!"
+try:
+    s.connect((serverip, serverport))
+    print "Connected"
+    sendinfo(tosend)
+    recieved = myreceive()
+except socket.error:
+    print "ain't woikin!"

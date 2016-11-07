@@ -116,7 +116,7 @@ while True:
     scores, out = open("high.txt", 'r'), ""
     for i in range(4):
         high = scores.readline()
-        if i == int(mode) and int(score) > int(high):
+        if i == int(mode) and int(score) => int(high):
             out = "New Highscore!"
             print "high score:", i, score
             try:
@@ -129,6 +129,8 @@ while True:
                 allhigh += str(high)
             except:
                 allhigh = str(high)
+        if i == int(mode) and int(score) < int(high):
+            out = "Global high score: "+str(high)
     scores.close()
     thisplayer.sendinfo(out)
     scores = open("high.txt", 'w')

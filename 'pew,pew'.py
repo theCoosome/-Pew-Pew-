@@ -4,12 +4,12 @@ import random
 import pygame
 import json
 import math
+import socket
 from decimal import *
 from pygame.locals import *
 getcontext().prec = 2
 pygame.init()
 #colors
-
 psych = False
 
 Green = pygame.Color(0,255,0)
@@ -50,6 +50,68 @@ def prints(stuff):
     global debugon
     if debugon:
         print stuff
+
+connected, serverip, serverport = True, "63.225.86.64", 7778
+def cuttofour(number):
+    number = str(number)
+    leng = len(number)
+    if leng > 4:
+        print "Packet too long. Cutting " + str(int(number)-int(number[:4])) + " digits"
+        number = number[:4]
+    if leng < 4:
+        rand = 4-leng
+        #print "splicing " + str(rand) + " leading zeros"
+        for i in range(rand):
+            number = "0"+number
+    return number
+
+def sendinfo(typewords):
+    global s
+    #send size of packet
+    msg = cuttofour(len(typewords))
+    totalsent = 0
+    while totalsent < 4:
+        sent = s.send(msg[totalsent:])
+        if sent == 0:
+            raise RuntimeError("socket connection broken")
+            break
+        totalsent = totalsent + sent
+    #send packet
+    totalsent = 0
+    while totalsent < int(msg):
+        sent = s.send(typewords[totalsent:])
+        if sent == 0:
+            raise RuntimeError("socket connection broken")
+            break
+        totalsent = totalsent + sent
+        
+def myreceive():
+    #Recieve quantity of words
+    global s
+    global connected
+    chunks = []
+    bytes_recd = 0
+    while bytes_recd < 4 and connected:
+        chunk = s.recv(min(4 - bytes_recd, 2048))
+        if chunk == '':
+            print "Server has disconnected"
+            connected = False
+        chunks.append(chunk)
+        bytes_recd = bytes_recd + len(chunk)
+    if connected:
+        MSGLEN = int(''.join(chunks))
+        #recieve the words
+        chunks = []
+        bytes_recd = 0
+        while bytes_recd < MSGLEN and connected:
+            chunk = s.recv(min(MSGLEN - bytes_recd, 2048))
+            if chunk == '':
+                print "Server has disconnected"
+                connected = False
+            chunks.append(chunk)
+            bytes_recd = bytes_recd + len(chunk)
+        return ''.join(chunks)
+
 
 class multipliers(object):
     def __init__(self, difficulty, hp, speed, cooldown, meteors, time):
@@ -371,27 +433,14 @@ def calcEff():
     if OP:
         out = "You were opped. High scores not counted."
     else:
-        out = ""
-        import io
-        scores = open("highscore.txt", 'r')
-        for i in range(4):
-            high = scores.readline()
-            if i == mult.difficulty and score > int(high):
-                out = "New Highscore!"
-                try:
-                    allhigh += str(score)+"\n"
-                except:
-                    allhigh = str(score)+"\n"
-            #not highscore
-            else:
-                try:
-                    allhigh += str(high)
-                except:
-                    allhigh = str(high)
-        scores.close()
-        scores = open("highscore.txt", 'w')
-        scores.write(allhigh)
-        scores.close()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            s.connect((serverip, serverport))
+            print "Connected"
+            sendinfo(tosend)
+            recieved = myreceive()
+        except socket.error:
+            print "Unable to connect"
     return out, score, efficiency
 
 equip(gunbase)
