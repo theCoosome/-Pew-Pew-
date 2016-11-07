@@ -6,11 +6,6 @@ import io
 import math
 from decimal import *
 getcontext().prec = 4
-
-#import pygame
-#pygame.init()
-#clock = pygame.time.Clock()
-
 #Send $ to pass, % to disconnect
 
 def cuttofour(number):
@@ -99,7 +94,6 @@ def getwords(input, quant):
             retreving = False
         else:
             prints("Missing "+str(quant-len(words))+" values")
-            input = raw_input("Provide: ")#NEED FIX----------------------------------------------
     
 serverport = 7778
 serversocket = socket.socket(

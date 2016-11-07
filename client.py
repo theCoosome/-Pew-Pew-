@@ -8,7 +8,7 @@ getcontext().prec = 4
 connected = True
 serverip = "63.225.86.64"
 serverport = 7778
-serverip = "192.168.3.112"
+serverip = "10.159.38.42"
 
 def cuttofour(number):
     number = str(number)
@@ -74,15 +74,18 @@ def myreceive():
 print "Connecting to ", serverip
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((serverip, serverport))
-print "Connected"
+try:
+    s.connect((serverip, serverport))
+    print "Connected"
 
-tosend = raw_input(":")
+    tosend = raw_input(":")
 
-sendinfo(tosend)
-recieved = myreceive()
+    sendinfo(tosend)
+    recieved = myreceive()
 
-print recieved
+    print recieved
 
 
-tosend = raw_input(":")
+    tosend = raw_input(":")
+except socket.error:
+    print "ain't woikin!"
