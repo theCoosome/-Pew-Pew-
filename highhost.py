@@ -93,7 +93,9 @@ def getwords(input, quant):
             return words
             retreving = False
         else:
-            prints("Missing "+str(quant-len(words))+" values")
+            print "Missing "+str(quant-len(words))+" values"
+            return ["0", "0"]
+            retreving = False
     
 serverport = 7778
 serversocket = socket.socket(
@@ -132,6 +134,3 @@ while True:
     scores = open("high.txt", 'w')
     scores.write(allhigh)
     scores.close()
-
-
-
