@@ -52,6 +52,7 @@ def prints(stuff):
         print stuff
 
 connected, serverip, serverport = True, "63.225.86.64", 7778
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 def cuttofour(number):
     number = str(number)
     leng = len(number)
@@ -423,6 +424,7 @@ def calcEff():
     global mult
     global metdestroyed
     global timer
+    global s
 
     try:
         efficiency = float(allshots - pershots)/float(allshots)
@@ -433,14 +435,14 @@ def calcEff():
     if OP:
         out = "You were opped. High scores not counted."
     else:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             s.connect((serverip, serverport))
             print "Connected"
-            sendinfo(tosend)
-            recieved = myreceive()
+            sendinfo(str(mult.difficulty)+" "+str(int(score)))
+            out = myreceive()
         except socket.error:
             print "Unable to connect"
+            out = "Disconnected from server"
     return out, score, efficiency
 
 equip(gunbase)
@@ -602,7 +604,7 @@ while Running:
                     alive = False
                 ship.hp -= temp
                 prints("Ship: " + str(ship.hp))
-                if ship.hp <= 0:
+                if ship.hp <= 0 and isAlive:
                     isAlive = False
                     highscore, score, efficiency = calcEff()
             if not alive:
