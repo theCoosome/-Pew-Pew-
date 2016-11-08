@@ -105,9 +105,11 @@ while Running:
     pygame.display.update()
     clock.tick(60)
 
-print "setup complete."
-#Version
-print "pewpew version 0.3"
+
+Screen.fill(Black)
+Line(Screen, Green, (0,0), (600,600), 3)
+pygame.display.update()
+print "updated screen"
 
 def getpartimg(name, quant):
     images = []
@@ -245,12 +247,7 @@ def collide(p1, p2, p3, p4):
         #if bottom is below top and top is above bottom
         if p1[1] + p2[1] > p3[1] and p1[1] < p3[1] + p4[1]:
             return True
-    #do it the other way as well
-    if p3[0] + p4[0] > p1[0] and p3[0] < p1[0] + p2[0]:
-        if p3[1] + p4[1] > p1[1] and p3[1] < p1[1] + p2[1]:
-            return True
 
-Screen.fill(Black)
 
 #import genMetor
 
@@ -659,11 +656,9 @@ allshots, pershots = 0, float(0)
 alldam, potdam = 0, 0
 fps = 60
 isAlive = True
-
-Line(Screen, Green, (0,0), (600,600), 3)
-pygame.display.update()
-print "updated screen"
-time.sleep(.1)
+print "setup complete."
+#Version
+print "pewpew version 0.3"
 
 #genMeteor(genMetor.genMetor(mult.difficulty, 5, 5, 5), (screenX/2, 20))
 
@@ -922,11 +917,7 @@ while Running:
         
     if ship.hp > 0:
         isAlive = True
-    
-    #Displays
-    #if timer.guncool > 0:        
-    #    Line(Screen, Red, (ship.coords[0]+15, ship.coords[1]), (ship.coords[0]+15, 0), 5)
-        
+
     if boss.on == 1:
         Screen.blit(boss.pic, boss.coords)
     Screen.blit(thisship, ship.coords)
