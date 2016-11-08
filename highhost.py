@@ -116,7 +116,7 @@ while True:
     scores, out = open("high.txt", 'r'), ""
     for i in range(4):
         high = scores.readline()
-        if i == int(mode) and int(score) => int(high):
+        if i == int(mode) and int(score) >= int(high):
             out = "New Highscore!"
             print "high score:", i, score
             try:
