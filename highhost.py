@@ -136,3 +136,4 @@ while True:
     scores = open("high.txt", 'w')
     scores.write(allhigh)
     scores.close()
+    del allhigh
