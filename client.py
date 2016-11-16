@@ -72,7 +72,7 @@ def myreceive():
         
         
 print "Connecting to ", serverip
-
+tosend = raw_input(":")
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 try:
     s.connect((serverip, serverport))
