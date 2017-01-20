@@ -51,7 +51,7 @@ def prints(stuff):
     if debugon:
         print stuff
 
-connected, serverip, serverport = True, "63.225.86.64", 7778
+connected, serverip, serverport = True, "75.175.28.223", 7778
 def cuttofour(number):
     number = str(number)
     leng = len(number)
@@ -125,7 +125,7 @@ class multipliers(object):
 Running = True
 while Running:
     Screen.fill(Black)
-    dialog = font.render("Pew \nPew", True, White)	
+    dialog = font.render("Pew Pew", True, White)	
     Screen.blit(dialog, [0,50])
     dialog = font.render("Use left and right arrows to move", True, White)	
     Screen.blit(dialog, [0,50+20])
@@ -440,6 +440,7 @@ def calcEff():
             print "Connected"
             sendinfo(str(mult.difficulty)+" "+str(int(score)))
             out = myreceive()
+            out = out[:len(out)-1]
         #except socket.error:
             #print "Unable to connect"
             #out = ""
