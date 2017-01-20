@@ -4,12 +4,12 @@ import random
 import pygame
 import json
 import math
+import socket
 from decimal import *
 from pygame.locals import *
 getcontext().prec = 2
 pygame.init()
 #colors
-
 psych = False
 
 Green = pygame.Color(0,255,0)
@@ -51,6 +51,68 @@ def prints(stuff):
     if debugon:
         print stuff
 
+connected, serverip, serverport = True, "75.175.28.223", 7778
+def cuttofour(number):
+    number = str(number)
+    leng = len(number)
+    if leng > 4:
+        print "Packet too long. Cutting " + str(int(number)-int(number[:4])) + " digits"
+        number = number[:4]
+    if leng < 4:
+        rand = 4-leng
+        #print "splicing " + str(rand) + " leading zeros"
+        for i in range(rand):
+            number = "0"+number
+    return number
+
+def sendinfo(typewords):
+    global s
+    #send size of packet
+    msg = cuttofour(len(typewords))
+    totalsent = 0
+    while totalsent < 4:
+        sent = s.send(msg[totalsent:])
+        if sent == 0:
+            raise RuntimeError("socket connection broken")
+            break
+        totalsent = totalsent + sent
+    #send packet
+    totalsent = 0
+    while totalsent < int(msg):
+        sent = s.send(typewords[totalsent:])
+        if sent == 0:
+            raise RuntimeError("socket connection broken")
+            break
+        totalsent = totalsent + sent
+        
+def myreceive():
+    #Recieve quantity of words
+    global s
+    global connected
+    chunks = []
+    bytes_recd = 0
+    while bytes_recd < 4 and connected:
+        chunk = s.recv(min(4 - bytes_recd, 2048))
+        if chunk == '':
+            print "Server has disconnected"
+            connected = False
+        chunks.append(chunk)
+        bytes_recd = bytes_recd + len(chunk)
+    if connected:
+        MSGLEN = int(''.join(chunks))
+        #recieve the words
+        chunks = []
+        bytes_recd = 0
+        while bytes_recd < MSGLEN and connected:
+            chunk = s.recv(min(MSGLEN - bytes_recd, 2048))
+            if chunk == '':
+                print "Server has disconnected"
+                connected = False
+            chunks.append(chunk)
+            bytes_recd = bytes_recd + len(chunk)
+        return ''.join(chunks)
+
+
 class multipliers(object):
     def __init__(self, difficulty, hp, speed, cooldown, meteors, time):
         self.difficulty = difficulty
@@ -63,8 +125,8 @@ class multipliers(object):
 Running = True
 while Running:
     Screen.fill(Black)
-    dialog = font.render("Pew Pew", True, White)	
-    Screen.blit(dialog, [32,32])
+    dialog = font.render("Pew Pew", True, White)
+    Screen.blit(dialog, [70,25])
     dialog = font.render("Use left and right arrows to move", True, White)	
     Screen.blit(dialog, [0,50+20])
     dialog = font.render("Up arrow to fire weapons.", True, White)	
@@ -588,6 +650,7 @@ def equip(weapon):
     ship.gun = weapon
     ship.hp += weapon.hpmod
 
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 def calcEff():
     global allshots
@@ -596,7 +659,7 @@ def calcEff():
     global mult
     global metdestroyed
     global timer
-
+    global s
     try:
         efficiency = float(allshots - pershots)/float(allshots)
     except ZeroDivisionError:
@@ -613,29 +676,15 @@ def calcEff():
     if OP:
         out = "You were opped. High scores not counted."
     else:
-        import io
-        scores = open("highscore.txt", 'r')
-        for i in range(4):
-            high = scores.readline()
-            prints("highscore for tier "+str(i)+": "+str(high))
-            if i == mult.difficulty and score > int(high):
-                out = "New Highscore!"
-                print "new Highscore"
-                try:
-                    allhigh += str(score)+"\n"
-                except:
-                    allhigh = str(score)+"\n"
-            #not highscore
-            else:
-                out = ""
-                try:
-                    allhigh += str(high)
-                except:
-                    allhigh = str(high)
-        scores.close()
-        scores = open("highscore.txt", 'w')
-        scores.write(allhigh)
-        scores.close()
+        #try:
+            s.connect((serverip, serverport))
+            print "Connected"
+            sendinfo(str(mult.difficulty)+" "+str(int(score)))
+            out = myreceive()
+            out = out[:len(out)-1]
+        #except socket.error:
+            #print "Unable to connect"
+            #out = ""
     return out, score, efficiency
 
 if mult.difficulty == 3:
