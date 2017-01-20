@@ -40,7 +40,10 @@ class player(object):
             chunks.append(chunk)
             bytes_recd = bytes_recd + len(chunk)
         if self.connected:
-            MSGLEN = int(''.join(chunks))
+            try:
+                MSGLEN = int(''.join(chunks))
+            except ValueError:
+                MSGLEN = 1000000
             #recieve the words
             chunks = []
             bytes_recd = 0
@@ -136,3 +139,4 @@ while True:
     scores = open("high.txt", 'w')
     scores.write(allhigh)
     scores.close()
+    del allhigh
