@@ -23,7 +23,7 @@ Line = pygame.draw.line
 Rect = pygame.draw.rect
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('Calibri', 15)
-OP = False
+OP = True
 #things
 
 wall1 = pygame.image.load('imgs/pewpew_wall1.png')
@@ -156,7 +156,7 @@ class proj(object):
 		self.pic = pic
 
 class gun(object):
-	def __init__(self, id, hpmod, hp, fires, size, speed, move, damage, cooldown, pic):
+	def __init__(self, id, hpmod, hp, fires, size, speed, move, damage, cooldown, pic, spec = False):
 		self.hp = hp
 		self.hpmod = hpmod
 		self.fires = 0
@@ -168,16 +168,19 @@ class gun(object):
 		self.id = id
 		self.cooldown = cooldown
 		self.pic = pic
+		self.spec = spec
 
 gunbase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, pewpic)
 gunrail = gun("Railgun", 1, 2, 18, (2, 10), 10, 10, 15, 28, railpic)
-gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, lazerpic)
+#gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, lazerpic) #Time dialator
+pewlazer = gun("Laser Beam", 1, 1, 1000, (2, 10), 50, 10, 0.5, -1, railpic, True)
+
 gundrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, drillpic)
 gunshield = gun("Shield Thrower", 10, 20, 1, (20, 5), 1, 1, 1, 50, shieldpic)
 guntommy = gun("Tommy Gun", 2, 1, 80, (2, 2), 4, 3, 2, 15, pewpic)
 gunop = gun("God gun", 50, 100, 1000, (50, 5), 6, 2, 30, 0, hypershieldpic)
 gunwall = gun("Wall Placer", 1, 55, 1, (50, -5), 6, 0, 1, 50, hypershieldpic)
-upgrades = [gunrail, gunlazer, gundrill, gunshield, guntommy, gunwall]
+upgrades = [gunrail, pewlazer, gundrill, gunshield, guntommy, gunwall]
 			
 class upgrade(object):
 	def __init__(self, coords, interval):
@@ -237,9 +240,9 @@ class timers(object):
 #object one coord pair, size, object two coord pair and size
 def collide(p1, p2, p3, p4):
 	#if right side is right of left side, and left side left of right side
-	if p1[0] + p2[0] > p3[0] and p1[0] < p3[0] + p4[0]:
+	if p1[1] + p2[1] > p3[1] and p1[1] < p3[1] + p4[1]:
 		#if bottom is below top and top is above bottom
-		if p1[1] + p2[1] > p3[1] and p1[1] < p3[1] + p4[1]:
+		if p1[0] + p2[0] > p3[0] and p1[0] < p3[0] + p4[0]:
 			return True
 		
 
@@ -568,6 +571,7 @@ def shoot():
 	timer.guncool = ship.gun.cooldown
 	temp = proj(ship.gun.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), ship.gun.size, ship.gun.speed, ship.gun.move, ship.gun.dmg, ship.gun.pic)
 	projectiles.append(temp)
+	
 	ship.gun.fires += 1
 	if ship.gun.fires > ship.gun.maxfires:
 		global gunbase
@@ -694,6 +698,9 @@ while Looping:
 		equip(upgrades[random.randint(0, len(upgrades)-1)])
 	else:
 		equip(gunbase)
+	
+	equip(pewlazer)
+	
 	t = 100
 	eventTimer = 10000
 	walls = 0
@@ -717,12 +724,12 @@ while Looping:
 	#main loop
 	Running = True
 	while Running:
-		if isAlive:
-			thisship = shippng
-		if timer.guncool > -1:
-			timer.guncool -= 1
-		if timer.guncool < 0 and shooting:
-			shoot()
+		Screen.fill(Black) #Reset screen
+		timer.backdrop += mult.speed
+		if timer.backdrop >= 0:
+			timer.backdrop = screenY-1000
+		Screen.blit(backimage, (0, timer.backdrop))
+					
 		timer.time += mult.time
 		if timer.time == bosstime:
 			boss.on = 1
@@ -742,12 +749,24 @@ while Looping:
 			#print "New meteor"
 			genMeteor(Meteors[random.randint(0,len(Meteors)-1)], (random.randint(0-20, screenX+20), 0-100))
 			
-		Screen.fill(Black)
-		timer.backdrop += mult.speed
-		if timer.backdrop >= 0:
-			timer.backdrop = screenY-1000
-		Screen.blit(backimage, (0, timer.backdrop))
 		
+		#player movement
+		timer.move -= 1
+		if timer.move <= 0:
+			timer.move = ship.move
+			ship.coords = (ship.coords[0]+ship.mom, ship.coords[1])
+			if ship.coords[0] > screenX-ship.size[0]:
+				ship.coords = (screenX-ship.size[0], ship.coords[1])
+			if ship.coords[0] < 0:
+				ship.coords = (0, ship.coords[1])
+				
+		if isAlive:
+			thisship = shippng
+		if timer.guncool > -1:
+			timer.guncool -= 1
+		if timer.guncool < 0 and shooting:
+			shoot()
+				
 		#boolet movement
 		for i in projectiles:
 			if not collide(i.coords, i.size, (0, 0), (screenX, screenY)):
@@ -766,7 +785,6 @@ while Looping:
 							prints("Boolet: " + str(i.hp))
 							if i.hp <= 0:
 								Screen.blit(i.pic, i.coords)
-								projectiles.remove(i)
 								alive = False
 								allshots += 1
 							prints("Meteor: " + str(x.hp))
@@ -784,7 +802,6 @@ while Looping:
 								prints("Boolet: " + str(i.hp))
 								if i.hp <= 0:
 									Screen.blit(i.pic, i.coords)
-									projectiles.remove(i)
 									alive = False
 								prints("Boss: " + str(boss.hp))
 								if boss.hp <= 0:
@@ -806,24 +823,12 @@ while Looping:
 									
 					if not alive:
 						break
-				try:
-					if i.hp >0:
-						Screen.blit(i.pic, i.coords)
-				except NameError:
-					pass
-		
-		 
-		#player movement
-		timer.move -= 1
-		if timer.move <= 0:
-			timer.move = ship.move
-			ship.coords = (ship.coords[0]+ship.mom, ship.coords[1])
-			if ship.coords[0] > screenX-ship.size[0]:
-				ship.coords = (screenX-ship.size[0], ship.coords[1])
-				print "Don't go out of Bounds!"
-			if ship.coords[0] < 0:
-				ship.coords = (0, ship.coords[1])
-				print "Don't go out of Bounds!"
+				if ship.gun.spec:
+					if ship.gun.id = "Laser Beam"
+					pygame.draw.line(Screen, (100, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 2)
+				Screen.blit(i.pic, i.coords)
+				if not alive:
+					projectiles.remove(i)
 		
 		
 		#meteors
@@ -926,6 +931,8 @@ while Looping:
 					boss.hp = 1
 				if event.key == K_y and OP:
 					ship.hp += 5
+				if event.key == K_l and OP:
+					equip(gunlazer)
 				#debug
 				if event.key == K_d:
 					if debugon:
