@@ -23,7 +23,7 @@ Line = pygame.draw.line
 Rect = pygame.draw.rect
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('Calibri', 15)
-OP = True
+OP = False
 #things
 
 wall1 = pygame.image.load('imgs/pewpew_wall1.png')
@@ -173,7 +173,7 @@ class gun(object):
 gunbase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, pewpic)
 gunrail = gun("Railgun", 1, 2, 18, (2, 10), 10, 10, 15, 28, railpic)
 #gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, lazerpic) #Time dialator
-pewlazer = gun("Laser Beam", 1, 1, 1000, (2, 10), 50, 10, 0.5, -1, railpic, True)
+pewlazer = gun("Laser Beam", 1, 1, 200, (2, 10), 50, 10, 0.5, -1, railpic, True)
 
 gundrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, drillpic)
 gunshield = gun("Shield Thrower", 10, 20, 1, (20, 5), 1, 1, 1, 50, shieldpic)
@@ -699,8 +699,6 @@ while Looping:
 	else:
 		equip(gunbase)
 	
-	equip(pewlazer)
-	
 	t = 100
 	eventTimer = 10000
 	walls = 0
@@ -823,9 +821,10 @@ while Looping:
 									
 					if not alive:
 						break
+				
 				if ship.gun.spec:
-					if ship.gun.id = "Laser Beam"
-					pygame.draw.line(Screen, (100, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 2)
+					if ship.gun.id == "Laser Beam":
+						pygame.draw.line(Screen, (100, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 2)
 				Screen.blit(i.pic, i.coords)
 				if not alive:
 					projectiles.remove(i)
@@ -924,6 +923,7 @@ while Looping:
 					OP = True
 					print "Opped."
 				if event.key == K_b and OP:
+					mult.meteors *= 2
 					boss.on = 1
 				if event.key == K_v and OP:
 					equip(gunop)
