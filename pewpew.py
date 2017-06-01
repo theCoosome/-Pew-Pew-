@@ -23,7 +23,7 @@ Line = pygame.draw.line
 Rect = pygame.draw.rect
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('Calibri', 15)
-OP = False
+OP = True
 #things
 
 wall1 = pygame.image.load('imgs/pewpew_wall1.png')
@@ -133,6 +133,9 @@ explosionpic = getpartimg("explosion", 5)
 crumblepic = getpartimg("destintegrate", 4)
 firebit = getpartimg("firebit", 11)
 
+def center(obj):
+	return (obj.coords[0]+(obj.size[0]/2), obj.coords[1]+(obj.size[1]/2))
+
 retimer = 5
 class particle(object): #speed is tuple of x and y speed
 	def __init__(self, coords, size, move, pics):
@@ -145,7 +148,7 @@ class particle(object): #speed is tuple of x and y speed
 		self.timer = retimer
 			
 class proj(object):
-	def __init__(self, hp, coords, size, speed, move, damage, pic):
+	def __init__(self, hp, coords, size, speed, move, damage, pic, id):
 		self.hp = hp
 		self.basehp = hp
 		self.coords = coords
@@ -154,6 +157,7 @@ class proj(object):
 		self.move = move
 		self.dmg = damage
 		self.pic = pic
+		self.id = id
 
 class gun(object):
 	def __init__(self, id, hpmod, hp, fires, size, speed, move, damage, cooldown, pic, spec = False):
@@ -173,7 +177,8 @@ class gun(object):
 gunbase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, pewpic)
 gunrail = gun("Railgun", 1, 2, 18, (2, 10), 10, 10, 15, 28, railpic)
 #gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, lazerpic) #Time dialator
-pewlazer = gun("Laser Beam", 1, 1, 200, (2, 10), 50, 10, 0.5, -1, railpic, True)
+pewlazer = gun("Laser Beam", 0, 1, 220, (2, 10), 50, 10, 0.5, -1, railpic, True)
+gunbomb = gun("Bomb Launcher", 2, 4, 1000, (4, 4), 2, 1, 1, 30, drillpic, True)
 
 gundrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, drillpic)
 gunshield = gun("Shield Thrower", 10, 20, 1, (20, 5), 1, 1, 1, 50, shieldpic)
@@ -569,7 +574,7 @@ def shoot():
 	global timer
 	#print "pew"
 	timer.guncool = ship.gun.cooldown
-	temp = proj(ship.gun.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), ship.gun.size, ship.gun.speed, ship.gun.move, ship.gun.dmg, ship.gun.pic)
+	temp = proj(ship.gun.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), ship.gun.size, ship.gun.speed, ship.gun.move, ship.gun.dmg, ship.gun.pic, ship.gun.id)
 	projectiles.append(temp)
 	
 	ship.gun.fires += 1
@@ -698,6 +703,8 @@ while Looping:
 		equip(upgrades[random.randint(0, len(upgrades)-1)])
 	else:
 		equip(gunbase)
+		
+	equip(gunbomb)
 	
 	t = 100
 	eventTimer = 10000
@@ -716,6 +723,7 @@ while Looping:
 	print "setup complete."
 	#Version
 	print "pewpew version 0.3"
+	localrand = False
 
 	#genMeteor(genMetor.genMetor(mult.difficulty, 5, 5, 5), (screenX/2, 20))
 
@@ -821,12 +829,37 @@ while Looping:
 									
 					if not alive:
 						break
-				
-				if ship.gun.spec:
-					if ship.gun.id == "Laser Beam":
-						pygame.draw.line(Screen, (100, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 2)
+				if i.id == "Laser Beam":
+					pygame.draw.line(Screen, (100, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 2)
 				Screen.blit(i.pic, i.coords)
 				if not alive:
+					if i.id == "Bomb Launcher":
+						localrand = center(i)
+						print "===="
+						#particles
+						for x in meteors:
+							distance = math.sqrt(((i.coords[0]+2)-(x.coords[0]+5))**2 + ((i.coords[1]+2)-(x.coords[1]+5))**2)
+							xdiff = (center(i)[0]-center(x)[0])
+							if int(xdiff) == 0:
+								xdiff = 0.1
+							ydiff = (center(i)[1]-center(x)[1])
+							if int(ydiff) == 0:
+								ydiff = 0.1
+							distance = math.sqrt(xdiff**2 + ydiff**2)
+							print distance
+							if distance < 60:
+								print "------"
+								print math.floor(distance)/10
+								'''dmg = math.floor((distance ** -1)*100)
+								if distance < 40:
+									dmg *= 1.5
+								print dmg
+								x.hp -= int(dmg)
+								print x.hp
+								if x.hp <= 0:
+									meteors.remove(x)
+									metdestroyed += 1'''
+								x.hp = 0
 					projectiles.remove(i)
 		
 		
@@ -1015,6 +1048,12 @@ while Looping:
 		else:
 			pass
 
+		if localrand != False:
+			pygame.draw.circle(Screen, (255, 255, 255), localrand, 60, 2)
+			pygame.draw.circle(Screen, (255, 255, 255), localrand, 40, 2)
+			pygame.display.update()
+			raw_input("")
+			
 		pygame.display.update()
 		clock.tick(fps)
 
