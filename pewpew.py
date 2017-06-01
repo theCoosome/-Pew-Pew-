@@ -838,14 +838,13 @@ while Looping:
 						print "===="
 						#particles
 						for x in meteors:
-							distance = math.sqrt(((i.coords[0]+2)-(x.coords[0]+5))**2 + ((i.coords[1]+2)-(x.coords[1]+5))**2)
 							xdiff = (center(i)[0]-center(x)[0])
 							if int(xdiff) == 0:
 								xdiff = 0.1
 							ydiff = (center(i)[1]-center(x)[1])
 							if int(ydiff) == 0:
 								ydiff = 0.1
-							distance = math.sqrt(xdiff**2 + ydiff**2)
+							distance = math.sqrt((xdiff**2) + (ydiff**2))
 							print distance
 							if distance < 60:
 								print "------"
@@ -855,11 +854,11 @@ while Looping:
 									dmg *= 1.5
 								print dmg
 								x.hp -= int(dmg)
-								print x.hp
+								print x.hp'''
+								x.hp = 0
 								if x.hp <= 0:
 									meteors.remove(x)
-									metdestroyed += 1'''
-								x.hp = 0
+									metdestroyed += 1
 					projectiles.remove(i)
 		
 		
