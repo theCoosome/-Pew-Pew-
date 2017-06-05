@@ -23,7 +23,7 @@ Line = pygame.draw.line
 Rect = pygame.draw.rect
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('Calibri', 15)
-OP = True
+OP = False
 #things
 
 wall1 = pygame.image.load('imgs/pewpew_wall1.png')
@@ -112,7 +112,6 @@ def myreceive():
             bytes_recd = bytes_recd + len(chunk)
         return ''.join(chunks)
 
-
 class multipliers(object):
     def __init__(self, difficulty, hp, speed, cooldown, meteors, time):
         self.difficulty = difficulty
@@ -121,7 +120,6 @@ class multipliers(object):
         self.cooldown = cooldown
         self.meteors = meteors
         self.time = time
-
 
 def getpartimg(name, quant):
 	images = []
@@ -178,14 +176,14 @@ gunbase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, pewpic)
 gunrail = gun("Railgun", 1, 2, 18, (2, 10), 10, 10, 15, 28, railpic)
 #gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, lazerpic) #Time dialator
 pewlazer = gun("Laser Beam", 0, 1, 220, (2, 10), 50, 10, 0.5, -1, railpic, True)
-gunbomb = gun("Bomb Launcher", 2, 4, 1000, (4, 4), 2, 1, 1, 30, drillpic, True)
+gunbomb = gun("Bomb Launcher", 2, 4, 6, (4, 4), 2, 1, 1, 30, drillpic, True)
 
 gundrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, drillpic)
 gunshield = gun("Shield Thrower", 10, 20, 1, (20, 5), 1, 1, 1, 50, shieldpic)
 guntommy = gun("Tommy Gun", 2, 1, 80, (2, 2), 4, 3, 2, 15, pewpic)
 gunop = gun("God gun", 50, 100, 1000, (50, 5), 6, 2, 30, 0, hypershieldpic)
 gunwall = gun("Wall Placer", 1, 55, 1, (50, -5), 6, 0, 1, 50, hypershieldpic)
-upgrades = [gunrail, pewlazer, gundrill, gunshield, guntommy, gunwall]
+upgrades = [gunrail, pewlazer, gundrill, gunshield, guntommy, gunwall, gunbomb]
 			
 class upgrade(object):
 	def __init__(self, coords, interval):
@@ -729,7 +727,7 @@ while Looping:
 	else:
 		equip(gunbase)
 		
-	equip(gunbomb)
+	#equip(gunbomb)
 	
 	t = 100
 	eventTimer = 10000
