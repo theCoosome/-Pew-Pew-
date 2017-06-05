@@ -249,7 +249,6 @@ def collide(p1, p2, p3, p4):
 		#if bottom is below top and top is above bottom
 		if p1[0] + p2[0] > p3[0] and p1[0] < p3[0] + p4[0]:
 			return True
-		
 
 AllMeteors = [[
 	[2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
@@ -556,7 +555,30 @@ AllMeteors = [[
 	
 	[2, [1, 1], [1, 1]],
 	[1, [1, 1], [1, 1]]
-  ]]
+], [
+	[1, [0, 1, 2, 2, 1, 0],
+	[1, 2, 3, 3, 2, 1],
+	[2, 3, 3, 3, 3, 2],
+	[2, 3, 3, 3, 3, 2],
+	[1, 2, 3, 3, 2, 1],
+	[0, 1, 2, 2, 1, 0]],
+	
+	[1, [2, 2],
+	[2, 2, 2],
+	[0, 2, 2, 2],
+	[0, 0, 2, 2, 2],
+	[0, 0, 0, 2, 2, 2],
+	[0, 0, 0, 0, 2, 2, 2],
+	[0, 0, 0, 0, 0, 2, 2, 2],
+	[0, 0, 0, 0, 0, 0, 2, 2]],
+	
+	[1, [2, 2],
+	[2, 2],
+	[2, 2],
+	[2, 2],
+	[2, 2],
+	[2, 2]]
+]]
 #-
 def genMeteor(thisMet, mod):
 	speed = thisMet[0]
@@ -673,6 +695,9 @@ while Looping:
 				if event.key == K_DOWN:
 					Running = False
 					mult = multipliers(3, 40, 5, 5, 8, 10)
+				if event.key == K_t:
+					Running = False
+					mult = multipliers(4, 2, 2, 2, 50, 1)
 		pygame.display.update()
 		clock.tick(60)
 
@@ -724,6 +749,31 @@ while Looping:
 	#Version
 	print "pewpew version 0.3"
 	localrand = False
+	
+	def killBoss():
+		global fps
+		global mult
+		global boss
+		global particles
+		global bossesbeat
+		global bosstime
+		global timer
+		
+		fps = 10
+		mult.meteors /= 2
+		localrand = math.floor(boss.size[0]/10)
+		for z in range(9):
+			pos1 = random.randint((boss.coords[0]+(z*localrand)), (boss.coords[0]+((z+1)*localrand)))
+			pos2 = random.randint(boss.coords[1], (boss.coords[1]+boss.size[1]))
+			particles.append(particle([pos1, pos2], [10, 10], [random.randint(-2, 2), random.randint(-1, 3)], firebit))
+		boss.on = 0
+		bossesbeat += 1
+		rand = (500/mult.cooldown)-(bossesbeat*10)
+		if rand < 10:
+			rand = 10
+		boss = Boss(1+bossesbeat, (300+(150*bossesbeat))*mult.hp, 5+bossesbeat, (150, 50), 10, rand, pygame.image.load('imgs/pewpew_enmBoss.png'))
+		boss.coords = ((screenX/2)-(boss.size[0]/2), -boss.size[1])
+		bosstime = timer.time + 6000
 
 	#genMeteor(genMetor.genMetor(mult.difficulty, 5, 5, 5), (screenX/2, 20))
 
@@ -811,21 +861,7 @@ while Looping:
 									alive = False
 								prints("Boss: " + str(boss.hp))
 								if boss.hp <= 0:
-									fps = 10
-									mult.meteors /= 2
-									localrand = math.floor(boss.size[0]/10)
-									for z in range(9):
-										pos1 = random.randint((boss.coords[0]+(z*localrand)), (boss.coords[0]+((z+1)*localrand)))
-										pos2 = random.randint(boss.coords[1], (boss.coords[1]+boss.size[1]))
-										particles.append(particle([pos1, pos2], [10, 10], [random.randint(-2, 2), random.randint(-1, 3)], firebit))
-									boss.on = 0
-									bossesbeat += 1
-									rand = (500/mult.cooldown)-(bossesbeat*10)
-									if rand < 10:
-										rand = 10
-									boss = Boss(1+bossesbeat, (300+(150*bossesbeat))*mult.hp, 5+bossesbeat, (150, 50), 10, rand, pygame.image.load('imgs/pewpew_enmBoss.png'))
-									boss.coords = ((screenX/2)-(boss.size[0]/2), -boss.size[1])
-									bosstime = timer.time + 6000
+									killBoss()
 									
 					if not alive:
 						break
@@ -834,28 +870,35 @@ while Looping:
 				Screen.blit(i.pic, i.coords)
 				if not alive:
 					if i.id == "Bomb Launcher":
-						localrand = center(i)
-						print "===="
+						localrand2 = len(meteors)
 						#particles
-						for x in meteors:
-							xdiff = (center(i)[0]-center(x)[0])
+						#Boss
+						BR = (i.coords[0]-58, i.coords[1]-58)
+						if collide(BR, (120, 120), boss.coords, boss.size) and boss.on:
+							print "hit"
+							Xover = max(0, min(boss.coords[0]+boss.size[0], BR[0]+120)-max(boss.coords[0], BR[0]))
+							Yover = max(0, min(boss.coords[1]+boss.size[1], BR[1]+120)-max(boss.coords[1], BR[1]))
+							overlap = Xover * Yover
+							print overlap
+							boss.hp -= overlap/100
+							if boss.hp <= 0:
+								killBoss()
+						
+						#Meteors
+						for n in range(localrand2):
+							x = meteors[localrand2-(n+1)]
+							xdiff = (center(i)[0]-(center(x)[0]))
 							if int(xdiff) == 0:
 								xdiff = 0.1
-							ydiff = (center(i)[1]-center(x)[1])
+							ydiff = (center(i)[1]-(center(x)[1]))
 							if int(ydiff) == 0:
 								ydiff = 0.1
 							distance = math.sqrt((xdiff**2) + (ydiff**2))
-							print distance
 							if distance < 60:
-								print "------"
-								print math.floor(distance)/10
-								'''dmg = math.floor((distance ** -1)*100)
-								if distance < 40:
-									dmg *= 1.5
-								print dmg
+								dmg = math.floor((distance ** -1)*80)
+								if distance > 35:
+									dmg *= 0.6
 								x.hp -= int(dmg)
-								print x.hp'''
-								x.hp = 0
 								if x.hp <= 0:
 									meteors.remove(x)
 									metdestroyed += 1
@@ -1047,11 +1090,11 @@ while Looping:
 		else:
 			pass
 
-		if localrand != False:
+		'''if localrand != False:
 			pygame.draw.circle(Screen, (255, 255, 255), localrand, 60, 2)
 			pygame.draw.circle(Screen, (255, 255, 255), localrand, 40, 2)
 			pygame.display.update()
-			raw_input("")
+			raw_input("")'''
 			
 		pygame.display.update()
 		clock.tick(fps)
