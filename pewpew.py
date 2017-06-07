@@ -626,6 +626,7 @@ def calcEff():
 		efficiency = 1
 	score, keeping = timer.time + math.floor(10 * metdestroyed * efficiency) + ((mult.difficulty+1) * 500 * bossesbeat), True
 	if psych:
+		score = math.floor(score * 1.5)
 	score, nscore = str(score), ""
 	for i in score:
 		if i == ".":
