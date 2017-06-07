@@ -575,7 +575,9 @@ AllMeteors = [[
 	[2, 2],
 	[2, 2],
 	[2, 2],
-	[2, 2]]
+	[2, 2]],
+	
+	[1, [1]]
 ]]
 #-
 def genMeteor(thisMet, mod):
@@ -617,11 +619,13 @@ def calcEff():
 	global metdestroyed
 	global timer
 	global s
+	global psych
 	try:
 		efficiency = float(allshots - pershots)/float(allshots)
 	except ZeroDivisionError:
 		efficiency = 1
 	score, keeping = timer.time + math.floor(10 * metdestroyed * efficiency) + ((mult.difficulty+1) * 500 * bossesbeat), True
+	if psych:
 	score, nscore = str(score), ""
 	for i in score:
 		if i == ".":
@@ -727,7 +731,7 @@ while Looping:
 	else:
 		equip(gunbase)
 		
-	#equip(gunbomb)
+	equip(gunbomb)
 	
 	t = 100
 	eventTimer = 10000
@@ -778,11 +782,12 @@ while Looping:
 	#main loop
 	Running = True
 	while Running:
-		Screen.fill(Black) #Reset screen
-		timer.backdrop += mult.speed
-		if timer.backdrop >= 0:
-			timer.backdrop = screenY-1000
-		Screen.blit(backimage, (0, timer.backdrop))
+		if not psych:
+			Screen.fill(Black) #Reset screen
+			timer.backdrop += mult.speed
+			if timer.backdrop >= 0:
+				timer.backdrop = screenY-1000
+			Screen.blit(backimage, (0, timer.backdrop))
 					
 		timer.time += mult.time
 		if timer.time == bosstime:
@@ -833,7 +838,7 @@ while Looping:
 					i.coords = (i.coords[0], i.coords[1]-i.move)
 					for x in meteors:
 						if collide(i.coords, i.size, x.coords, x.size):
-							particles.append(particle([x.coords[0]+(x.size[0]/2), x.coords[1]], [10, 10], [0, random.randint(x.speed-1, x.speed+1)], crumblepic))
+							particles.append(particle(center(x), [10, 10], [0, random.randint(x.speed-1, x.speed+1)], crumblepic))
 							x.hp -= i.dmg
 							i.hp -= x.dmg
 							prints("Boolet: " + str(i.hp))
@@ -886,16 +891,21 @@ while Looping:
 						for n in range(localrand2):
 							x = meteors[localrand2-(n+1)]
 							xdiff = (center(i)[0]-(center(x)[0]))
-							if int(xdiff) == 0:
-								xdiff = 0.1
+							'''if int(xdiff) == 0:
+								xdiff = 0.1'''
 							ydiff = (center(i)[1]-(center(x)[1]))
-							if int(ydiff) == 0:
-								ydiff = 0.1
-							distance = math.sqrt((xdiff**2) + (ydiff**2))
+							'''if int(ydiff) == 0:
+								ydiff = -0.1'''
+							distance = math.hypot(xdiff, ydiff)
 							if distance < 60:
 								dmg = math.floor((distance ** -1)*80)
 								if distance > 35:
 									dmg *= 0.6
+								else:
+									if psych:
+										particles.append(particle(center(x), [10, 10], [xdiff*(1/distance), (abs(x.speed)*ydiff)*(1/distance)], crumblepic))
+									else:
+										particles.append(particle(center(x), [10, 10], [xdiff*(-1/distance), (abs(x.speed)*ydiff)*(-1/distance)], crumblepic))
 								x.hp -= int(dmg)
 								if x.hp <= 0:
 									meteors.remove(x)
