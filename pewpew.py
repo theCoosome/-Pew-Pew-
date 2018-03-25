@@ -184,6 +184,7 @@ Gunrail = gun("Scientific", 0, 25, 2, (6, 10), 10, 10, 30, 60, chargepic)
 #gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, lazerpic) #Time dialator
 pewlazer = gun("Laser Beam", 0, 1, 220, (2, 10), 50, 10, 0.5, -1, lightpic, True)
 Gunlazer = gun("Decimator", -1, 1, 220, (4, 10), 50, 10, 1, -1, lightpic, True)
+GunGod = gun("Ender", -50, 200, 300, (20, 500), 1, 500, 1, -1, chargepic)
 gunbomb = gun("Bomb Launcher", 2, 4, 6, (4, 4), 2, 1, 1, 30, bombpic, True)
 
 gundrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, drillpic)
@@ -915,6 +916,9 @@ while Looping:
 					pygame.draw.line(Screen, (130, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 2)
 				if i.id == "Decimator":
 					pygame.draw.line(Screen, (200, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 4)
+				if i.id == "Ender":
+					pygame.draw.line(Screen, (100, 0, 0), (ship.coords[0]+2, ship.coords[1]-10), (ship.coords[0]+2, 0), 20)
+					pygame.draw.line(Screen, (200, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, 0), 4)
 				Screen.blit(i.pic, i.coords)
 				if not alive:
 					if i.id == "Bomb Launcher":
@@ -1074,6 +1078,8 @@ while Looping:
 					equip(Gunlazer)
 				if event.key == K_6 and OP:
 					equip(Gunwall)
+				if event.key == K_7 and OP:
+					equip(GunGod)
 				#debug
 				if event.key == K_d:
 					if debugon:
@@ -1109,6 +1115,8 @@ while Looping:
 					print "       "+str(crit)
 					if random.randint(30, 400) <= crit:
 						equip(supers[misc])
+						if crit > 400 and random.randint(400, 1000) < crit:
+							equip(GunGod)
 					else:
 						equip(upgrades[misc])
 					break
