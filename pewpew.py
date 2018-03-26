@@ -907,6 +907,10 @@ while Looping:
 						break
 						
 				if i.id in ["Wall Placer", "Defender"]:
+					hpratio = Decimal(i.hp)/Decimal(i.basehp)
+					print hpratio, i.coords[0]+int(hpratio*i.size[0]/2)
+					pygame.draw.aaline(Screen, (max(225-225*hpratio, 0), max(225*hpratio, 0), 0), (i.coords[0], i.coords[1]+5), (i.coords[0]+int(hpratio*i.size[0]/2), i.coords[1]+5), True)
+					pygame.draw.aaline(Screen, (max(225-225*hpratio, 0), max(225*hpratio, 0), 0), (i.coords[0]+i.size[0], i.coords[1]+5), (i.coords[0]+i.size[0]-int(hpratio*i.size[0]/2), i.coords[1]+5), True)
 					if i.hp < i.basehp:
 						i.hp += 0.5
 						if i.hp < i.basehp * (5-mult.difficulty)/4:
@@ -1156,8 +1160,12 @@ while Looping:
 			hpratio = (Decimal(ship.hp)/Decimal(ship.basehp))*100
 			if hpratio >= 100:
 				hpratio = float(hpratio)
-			misc = "Health: "+str(hpratio)+"%"
-			dialog = font.render(misc, True, White)    
+			if ship.hp < 0:
+				misc = "Open hull"
+				dialog = font.render(misc, True, (225, 150, 150))  
+			else:
+				misc = "Health: "+str(hpratio)+"%"
+				dialog = font.render(misc, True, White)    
 			Screen.blit(dialog, [0,screenY-32])
 			dialog = font.render("Meters: "+str(timer.time), True, White)
 			Screen.blit(dialog, [screenX/2, screenY-32])
