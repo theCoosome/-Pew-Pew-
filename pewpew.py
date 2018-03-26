@@ -743,12 +743,12 @@ while Looping:
 	Meteors = AllMeteors[mult.difficulty]
 	
 
-	if mult.difficulty == 3:
+	if mult.difficulty == 2:
+		equip(Gunbarrer)
+	elif mult.difficulty == 3:
 		equip(upgrades[random.randint(0, len(upgrades)-1)])
 	else:
 		equip(gunbase)
-		
-	equip(gunwall)
 	
 	t = 100
 	eventTimer = 10000
