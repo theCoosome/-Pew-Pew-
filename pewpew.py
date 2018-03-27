@@ -23,7 +23,8 @@ Line = pygame.draw.line
 Rect = pygame.draw.rect
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('Calibri', 15)
-OP = False
+pygame.display.set_caption("Pew Pew")
+OP = True
 #things
 
 wall1 = pygame.image.load('imgs/pewpew_wall1.png')
@@ -37,7 +38,11 @@ drillpic = pygame.image.load('imgs/gundrill.png')
 railpic = pygame.image.load('imgs/gunrail.png')
 shieldpic = pygame.image.load('imgs/gunshield.png')
 lazerpic = pygame.image.load('imgs/gunlazer.png')
+chargepic = pygame.image.load('imgs/charged.png')
+excavpic = pygame.image.load('imgs/excavator.png')
 hypershieldpic = pygame.image.load('imgs/hypershield.png')
+lightpic = pygame.image.load('imgs/light.png')
+bombpic = pygame.image.load('imgs/bomb.png')
 backimage = pygame.image.load('imgs/pewpew_backdrop.png')
 powerpic = pygame.image.load('imgs/powerup.png')
 shippng = pygame.image.load('imgs/pewpewship.png')
@@ -45,8 +50,9 @@ dmgpng = pygame.image.load('imgs/damagepew.png')
 upgradepng = pygame.image.load('imgs/powerup.png')
 
 #other
-
 debugon = False
+RecentDamage = 0
+
 def prints(stuff):
     global debugon
     if debugon:
@@ -112,7 +118,6 @@ def myreceive():
             bytes_recd = bytes_recd + len(chunk)
         return ''.join(chunks)
 
-
 class multipliers(object):
     def __init__(self, difficulty, hp, speed, cooldown, meteors, time):
         self.difficulty = difficulty
@@ -121,7 +126,6 @@ class multipliers(object):
         self.cooldown = cooldown
         self.meteors = meteors
         self.time = time
-
 
 def getpartimg(name, quant):
 	images = []
@@ -132,6 +136,10 @@ def getpartimg(name, quant):
 explosionpic = getpartimg("explosion", 5)
 crumblepic = getpartimg("destintegrate", 4)
 firebit = getpartimg("firebit", 11)
+sparks = getpartimg("spark", 5)
+
+def center(obj):
+	return (obj.coords[0]+(obj.size[0]/2), obj.coords[1]+(obj.size[1]/2))
 
 retimer = 5
 class particle(object): #speed is tuple of x and y speed
@@ -145,7 +153,7 @@ class particle(object): #speed is tuple of x and y speed
 		self.timer = retimer
 			
 class proj(object):
-	def __init__(self, hp, coords, size, speed, move, damage, pic):
+	def __init__(self, hp, coords, size, speed, move, damage, pic, id):
 		self.hp = hp
 		self.basehp = hp
 		self.coords = coords
@@ -154,6 +162,7 @@ class proj(object):
 		self.move = move
 		self.dmg = damage
 		self.pic = pic
+		self.id = id
 
 class gun(object):
 	def __init__(self, id, hpmod, hp, fires, size, speed, move, damage, cooldown, pic, spec = False):
@@ -162,8 +171,8 @@ class gun(object):
 		self.fires = 0
 		self.maxfires = fires-1
 		self.size = size
-		self.speed = speed
-		self.move = move
+		self.speed = speed #times to loop
+		self.move = move #ammount to move each loop
 		self.dmg = damage
 		self.id = id
 		self.cooldown = cooldown
@@ -171,16 +180,26 @@ class gun(object):
 		self.spec = spec
 
 gunbase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, pewpic)
-gunrail = gun("Railgun", 1, 2, 18, (2, 10), 10, 10, 15, 28, railpic)
+gunrail = gun("Railgun", 1, 2, 10, (2, 10), 10, 10, 25, 28, railpic)
+Gunrail = gun("Scientific", 0, 2000, 2, (30, 30), 50, 10, 30, 60, chargepic)
 #gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, lazerpic) #Time dialator
-pewlazer = gun("Laser Beam", 1, 1, 200, (2, 10), 50, 10, 0.5, -1, railpic, True)
+pewlazer = gun("Laser Beam", 0, 1, 220, (2, 10), 50, 10, 0.5, -1, lightpic, True)
+Gunlazer = gun("Decimator", -1, 1, 220, (4, 10), 50, 10, 1, -1, lightpic, True)
+GunGod = gun("Ender", -50, 200, 300, (20, 500), 1, 500, 1, -1, chargepic)
+gunbomb = gun("Bomb Launcher", 2, 4, 6, (4, 4), 2, 1, 1, 30, bombpic, True)
+Gunbomb = gun("Nuclear Charge", 2, 4, 1, (4, 4), 1, 2, 1, 30, bombpic)
 
 gundrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, drillpic)
+Gundrill = gun("Excavator", 3, 200, 1, (30, 30), 1, 1, 1, 40, excavpic)
 gunshield = gun("Shield Thrower", 10, 20, 1, (20, 5), 1, 1, 1, 50, shieldpic)
+Gunbarrer = gun("Shielding", 20, 10, 1, (20, 5), 1, 1, 1, 50, shieldpic)
 guntommy = gun("Tommy Gun", 2, 1, 80, (2, 2), 4, 3, 2, 15, pewpic)
+Gungatling = gun("Gatling", 2, 1, 200, (2, 4), 3, 5, 3, 10, pewpic)
 gunop = gun("God gun", 50, 100, 1000, (50, 5), 6, 2, 30, 0, hypershieldpic)
-gunwall = gun("Wall Placer", 1, 55, 1, (50, -5), 6, 0, 1, 50, hypershieldpic)
-upgrades = [gunrail, pewlazer, gundrill, gunshield, guntommy, gunwall]
+gunwall = gun("Wall Placer", 1, 56, 1, (50, 20), 1, 5, 1, 50, hypershieldpic)
+Gunwall = gun("Defender", 2, 20, 1, (20, 10), 1, 3, 1, 50, shieldpic)
+upgrades = [gunrail, pewlazer, gundrill, gunshield, guntommy, gunwall, gunbomb]
+supers = [Gunrail, Gunlazer, Gundrill, Gunbarrer, Gungatling, Gunwall, Gunbomb]
 			
 class upgrade(object):
 	def __init__(self, coords, interval):
@@ -236,6 +255,7 @@ class timers(object):
 		self.backdrop = 100
 		self.bossatk = 300
 		self.powerup = 400
+		self.neardead = 0.0
 		
 #object one coord pair, size, object two coord pair and size
 def collide(p1, p2, p3, p4):
@@ -244,7 +264,6 @@ def collide(p1, p2, p3, p4):
 		#if bottom is below top and top is above bottom
 		if p1[0] + p2[0] > p3[0] and p1[0] < p3[0] + p4[0]:
 			return True
-		
 
 AllMeteors = [[
 	[2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
@@ -328,230 +347,255 @@ AllMeteors = [[
 	
 	[2, [1, 1], [1, 1]],
 	[1, [1, 1], [1, 1]]
-], [
-	[2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
-	
-	[1, [0, 0, 1, 1, 0, 0],
-	[0, 1, 2, 2, 1, 0],
-	[1, 2, 2, 3, 2, 1],
-	[0, 1, 1, 2, 1, 0],
-	[0, 0, 0, 1, 0, 0]],
-	
-	[1, [0, 0, 0, 0, 1, 1, 1],
-	[0, 0, 0, 1, 2, 2, 1],
-	[0, 0, 1, 2, 3, 1, 0],
-	[0, 0, 1, 3, 2, 1, 0],
-	[0, 1, 2, 3, 4, 2, 0],
-	[1, 1, 3, 4, 2, 1, 0],
-	[1, 2, 2, 2, 1, 0, 0],
-	[0, 1, 1, 1, 0, 0, 0]
-	],
-	
-	[3, [0, 1, 0, 0],
-	[0, 0, 0, 0], 
-	[0, 0, 1, 0],
-	[0, 1, 2, 0],
-	[2, 3, 3, 2],
-	[3, 3, 3, 2],
-	[3, 5, 3, 3],
-	[2, 3, 2, 2],
-	[0, 2, 3, 0]],
-	
-	[3, [0, 1, 0],
-	[0, 0, 0],
-	[1, 0, 0],
-	[0, 0, 1],
-	[0, 1, 0],
-	[1, 2, 0],
-	[2, 3, 2],
-	[3, 3, 3],
-	[1, 3, 1]],
-	
-	[1, [0, 0, 0, 0, 1, 0, 0],
-	[0, 0, 1, 0, 0, 0, 0],
-	[0, 1, 0, 1, 0, 0, 0],
-	[0, 0, 0, 1, 1, 0, 0],
-	[0, 1, 0, 0, 0, 0, 1],
-	[0, 0, 0, 0, 0, 0, 0],
-	[1, 0, 1, 0, 1, 0, 0],
-	[0, 0, 0, 0, 0, 1, 0],
-	[1, 0, 1, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 1],
-	[0, 1, 0, 1, 0, 0, 0]],
-	
-	[1, [0, 1, 1, 0, 1, 0, 0],
-	[0, 0, 1, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 1, 0],
-	[0, 1, 0, 1, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 1, 1, 0],
-	[0, 1, 0, 0, 1, 1, 0],
-	[1, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 1],
-	[0, 1, 0, 0, 1, 0, 0],
-	[0, 0, 0, 1, 0, 1, 0]],
-	
-	[2, [0, 1, 1, 0],
-	[1, 1, 1, 1],
-	[1, 1, 1, 1],
-	[0, 1, 1, 0]],
-	
-	[1, [0, 1, 1, 0],
-	[1, 2, 2, 1],
-	[1, 2, 2, 1],
-	[0, 1, 1, 0]],
-	
-	[2, [1, 1], [1, 1]],
-	[1, [1, 1], [1, 1]]
-],[
-	[2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
-	
-	[1, [0, 0, 1, 1, 0, 0],
-	[0, 1, 2, 2, 1, 0],
-	[1, 2, 2, 3, 2, 1],
-	[0, 1, 1, 2, 1, 0],
-	[0, 0, 0, 1, 0, 0]],
+	], [
+		[2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
+		
+		[1, [0, 0, 1, 1, 0, 0],
+		[0, 1, 2, 2, 1, 0],
+		[1, 2, 2, 3, 2, 1],
+		[0, 1, 1, 2, 1, 0],
+		[0, 0, 0, 1, 0, 0]],
+		
+		[1, [0, 0, 0, 0, 1, 1, 1],
+		[0, 0, 0, 1, 2, 2, 1],
+		[0, 0, 1, 2, 3, 1, 0],
+		[0, 0, 1, 3, 2, 1, 0],
+		[0, 1, 2, 3, 4, 2, 0],
+		[1, 1, 3, 4, 2, 1, 0],
+		[1, 2, 2, 2, 1, 0, 0],
+		[0, 1, 1, 1, 0, 0, 0]
+		],
+		
+		[3, [0, 1, 0, 0],
+		[0, 0, 0, 0], 
+		[0, 0, 1, 0],
+		[0, 1, 2, 0],
+		[2, 3, 3, 2],
+		[3, 3, 3, 2],
+		[3, 5, 3, 3],
+		[2, 3, 2, 2],
+		[0, 2, 3, 0]],
+		
+		[3, [0, 1, 0],
+		[0, 0, 0],
+		[1, 0, 0],
+		[0, 0, 1],
+		[0, 1, 0],
+		[1, 2, 0],
+		[2, 3, 2],
+		[3, 3, 3],
+		[1, 3, 1]],
+		
+		[1, [0, 0, 0, 0, 1, 0, 0],
+		[0, 0, 1, 0, 0, 0, 0],
+		[0, 1, 0, 1, 0, 0, 0],
+		[0, 0, 0, 1, 1, 0, 0],
+		[0, 1, 0, 0, 0, 0, 1],
+		[0, 0, 0, 0, 0, 0, 0],
+		[1, 0, 1, 0, 1, 0, 0],
+		[0, 0, 0, 0, 0, 1, 0],
+		[1, 0, 1, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 1],
+		[0, 1, 0, 1, 0, 0, 0]],
+		
+		[1, [0, 1, 1, 0, 1, 0, 0],
+		[0, 0, 1, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 1, 0],
+		[0, 1, 0, 1, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 1, 1, 0],
+		[0, 1, 0, 0, 1, 1, 0],
+		[1, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 1],
+		[0, 1, 0, 0, 1, 0, 0],
+		[0, 0, 0, 1, 0, 1, 0]],
+		
+		[2, [0, 1, 1, 0],
+		[1, 1, 1, 1],
+		[1, 1, 1, 1],
+		[0, 1, 1, 0]],
+		
+		[1, [0, 1, 1, 0],
+		[1, 2, 2, 1],
+		[1, 2, 2, 1],
+		[0, 1, 1, 0]],
+		
+		[2, [1, 1], [1, 1]],
+		[1, [1, 1], [1, 1]]
+	],[
+		[2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
+		
+		[1, [0, 0, 1, 1, 0, 0],
+		[0, 1, 2, 2, 1, 0],
+		[1, 2, 2, 3, 2, 1],
+		[0, 1, 1, 2, 1, 0],
+		[0, 0, 0, 1, 0, 0]],
 
-	[2, [0, 0, 1, 1, 0, 0],
-	[0, 1, 2, 2, 1, 0],
-	[1, 2, 2, 3, 2, 1],
-	[0, 1, 1, 2, 1, 0],
-	[0, 0, 0, 1, 0, 0]],
-	
-	[1, [0, 1, 1, 0, 0, 0, 0],
-	[0, 1, 2, 1, 0, 0, 0],
-	[0, 1, 2, 3, 1, 0, 0],
-	[0, 1, 3, 2, 1, 0, 0],
-	[0, 1, 2, 3, 4, 2, 0],
-	[1, 1, 4, 3, 2, 1, 0],
-	[1, 2, 2, 2, 1, 0, 0],
-	[0, 0, 1, 1, 1, 0, 0]
-	],
-	
-	[3, [0, 1, 0, 0],
-	[0, 0, 0, 0], 
-	[0, 0, 1, 0],
-	[0, 1, 2, 0],
-	[2, 3, 3, 2],
-	[3, 3, 3, 2],
-	[3, 6, 3, 3],
-	[2, 3, 2, 2],
-	[0, 2, 3, 0]],
-	
-	[3, [0, 1, 0],
-	[0, 0, 0],
-	[1, 0, 0],
-	[0, 0, 1],
-	[0, 1, 0],
-	[1, 2, 0],
-	[2, 3, 2],
-	[3, 3, 3],
-	[1, 3, 1]],
-	
-	[1, [0, 0, 0, 0, 1, 0, 0],
-	[0, 0, 1, 0, 0, 0, 0],
-	[0, 1, 0, 1, 0, 0, 0],
-	[0, 0, 0, 1, 1, 0, 0],
-	[0, 1, 0, 0, 0, 0, 1],
-	[0, 0, 0, 0, 0, 0, 0],
-	[1, 0, 1, 0, 1, 0, 0],
-	[0, 0, 0, 0, 0, 1, 0],
-	[1, 0, 1, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 1],
-	[0, 1, 0, 1, 0, 0, 0]],
-	
-	[1, [0, 2, 1, 0, 1, 0, 0],
-	[0, 0, 1, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 1, 0],
-	[0, 1, 0, 1, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 2, 1, 0],
-	[0, 1, 0, 0, 1, 2, 0],
-	[2, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 1],
-	[0, 1, 0, 0, 1, 0, 0],
-	[0, 0, 0, 1, 0, 1, 0]],
-	
-	[2, [0, 1, 1, 0],
-	[1, 1, 1, 1],
-	[1, 1, 1, 1],
-	[0, 1, 1, 0]],
-	
-	[1, [0, 1, 1, 0],
-	[1, 2, 2, 1],
-	[1, 2, 2, 1],
-	[0, 1, 1, 0]],
-	
-	[2, [1, 1], [1, 1]],
-	[1, [1, 1], [1, 1]]
-],[
-	[2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
-	
-	[1, [0, 0, 1, 1, 0, 0],
-	[0, 1, 2, 2, 1, 0],
-	[1, 2, 2, 3, 2, 1],
-	[0, 1, 1, 2, 1, 0],
-	[0, 0, 0, 1, 0, 0]],
-	
-	[1, [0, 0, 0, 0, 1, 1, 1],
-	[0, 0, 0, 1, 2, 2, 1],
-	[0, 0, 1, 2, 3, 1, 0],
-	[0, 0, 1, 3, 2, 1, 0],
-	[0, 1, 2, 3, 4, 2, 0],
-	[1, 1, 3, 4, 2, 1, 0],
-	[1, 2, 2, 2, 1, 0, 0],
-	[0, 1, 1, 1, 0, 0, 0]
-	],
-	
-	[5, [1]],
-	
-	[3, [0, 1, 0],
-	[0, 0, 0],
-	[1, 0, 0],
-	[0, 0, 1],
-	[0, 1, 0],
-	[1, 2, 0],
-	[2, 3, 2],
-	[3, 3, 3],
-	[1, 3, 1]],
-	
-	[1, [0, 0, 0, 0, 1, 0, 0],
-	[0, 0, 1, 0, 0, 0, 0],
-	[0, 1, 0, 1, 0, 0, 0],
-	[0, 0, 0, 1, 1, 0, 0],
-	[0, 1, 0, 0, 0, 0, 1],
-	[0, 0, 0, 0, 0, 0, 0],
-	[1, 0, 1, 0, 1, 0, 0],
-	[0, 0, 0, 0, 0, 1, 0],
-	[1, 0, 1, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 1],
-	[0, 1, 0, 1, 0, 0, 0]],
-	
-	[1, [0, 1, 1, 0, 1, 0, 0],
-	[0, 0, 1, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 1, 0],
-	[0, 1, 0, 1, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 1, 1, 0],
-	[0, 1, 0, 0, 1, 1, 0],
-	[1, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 1],
-	[0, 1, 0, 0, 1, 0, 0],
-	[0, 0, 0, 1, 0, 1, 0]],
-	
-	[2, [0, 1, 1, 0],
-	[1, 1, 1, 1],
-	[1, 1, 1, 1],
-	[0, 1, 1, 0]],
-	
-	[1, [0, 1, 1, 0],
-	[1, 2, 2, 1],
-	[1, 2, 2, 1],
-	[0, 1, 1, 0]],
-	
-	[2, [1, 1], [1, 1]],
-	[1, [1, 1], [1, 1]]
-  ]]
+		[2, [0, 0, 1, 1, 0, 0],
+		[0, 1, 2, 2, 1, 0],
+		[1, 2, 2, 3, 2, 1],
+		[0, 1, 1, 2, 1, 0],
+		[0, 0, 0, 1, 0, 0]],
+		
+		[1, [0, 1, 1, 0, 0, 0, 0],
+		[0, 1, 2, 1, 0, 0, 0],
+		[0, 1, 2, 3, 1, 0, 0],
+		[0, 1, 3, 2, 1, 0, 0],
+		[0, 1, 2, 3, 4, 2, 0],
+		[1, 1, 4, 3, 2, 1, 0],
+		[1, 2, 2, 2, 1, 0, 0],
+		[0, 0, 1, 1, 1, 0, 0]
+		],
+		
+		[3, [0, 1, 0, 0],
+		[0, 0, 0, 0], 
+		[0, 0, 1, 0],
+		[0, 1, 2, 0],
+		[2, 3, 3, 2],
+		[3, 3, 3, 2],
+		[3, 6, 3, 3],
+		[2, 3, 2, 2],
+		[0, 2, 3, 0]],
+		
+		[3, [0, 1, 0],
+		[0, 0, 0],
+		[1, 0, 0],
+		[0, 0, 1],
+		[0, 1, 0],
+		[1, 2, 0],
+		[2, 3, 2],
+		[3, 3, 3],
+		[1, 3, 1]],
+		
+		[1, [0, 0, 0, 0, 1, 0, 0],
+		[0, 0, 1, 0, 0, 0, 0],
+		[0, 1, 0, 1, 0, 0, 0],
+		[0, 0, 0, 1, 1, 0, 0],
+		[0, 1, 0, 0, 0, 0, 1],
+		[0, 0, 0, 0, 0, 0, 0],
+		[1, 0, 1, 0, 1, 0, 0],
+		[0, 0, 0, 0, 0, 1, 0],
+		[1, 0, 1, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 1],
+		[0, 1, 0, 1, 0, 0, 0]],
+		
+		[1, [0, 2, 1, 0, 1, 0, 0],
+		[0, 0, 1, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 1, 0],
+		[0, 1, 0, 1, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 2, 1, 0],
+		[0, 1, 0, 0, 1, 2, 0],
+		[2, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 1],
+		[0, 1, 0, 0, 1, 0, 0],
+		[0, 0, 0, 1, 0, 1, 0]],
+		
+		[2, [0, 1, 1, 0],
+		[1, 1, 1, 1],
+		[1, 1, 1, 1],
+		[0, 1, 1, 0]],
+		
+		[1, [0, 1, 1, 0],
+		[1, 2, 2, 1],
+		[1, 2, 2, 1],
+		[0, 1, 1, 0]],
+		
+		[2, [1, 1], [1, 1]],
+		[1, [1, 1], [1, 1]]
+	],[
+		[2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
+		
+		[1, [0, 0, 1, 1, 0, 0],
+		[0, 1, 2, 2, 1, 0],
+		[1, 2, 2, 3, 2, 1],
+		[0, 1, 1, 2, 1, 0],
+		[0, 0, 0, 1, 0, 0]],
+		
+		[1, [0, 0, 0, 0, 1, 1, 1],
+		[0, 0, 0, 1, 2, 2, 1],
+		[0, 0, 1, 2, 3, 1, 0],
+		[0, 0, 1, 3, 2, 1, 0],
+		[0, 1, 2, 3, 4, 2, 0],
+		[1, 1, 3, 4, 2, 1, 0],
+		[1, 2, 2, 2, 1, 0, 0],
+		[0, 1, 1, 1, 0, 0, 0]
+		],
+		
+		[5, [1]],
+		
+		[3, [0, 1, 0],
+		[0, 0, 0],
+		[1, 0, 0],
+		[0, 0, 1],
+		[0, 1, 0],
+		[1, 2, 0],
+		[2, 3, 2],
+		[3, 3, 3],
+		[1, 3, 1]],
+		
+		[1, [0, 0, 0, 0, 1, 0, 0],
+		[0, 0, 1, 0, 0, 0, 0],
+		[0, 1, 0, 1, 0, 0, 0],
+		[0, 0, 0, 1, 1, 0, 0],
+		[0, 1, 0, 0, 0, 0, 1],
+		[0, 0, 0, 0, 0, 0, 0],
+		[1, 0, 1, 0, 1, 0, 0],
+		[0, 0, 0, 0, 0, 1, 0],
+		[1, 0, 1, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 1],
+		[0, 1, 0, 1, 0, 0, 0]],
+		
+		[1, [0, 1, 1, 0, 1, 0, 0],
+		[0, 0, 1, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 1, 0],
+		[0, 1, 0, 1, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 1, 1, 0],
+		[0, 1, 0, 0, 1, 1, 0],
+		[1, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 1],
+		[0, 1, 0, 0, 1, 0, 0],
+		[0, 0, 0, 1, 0, 1, 0]],
+		
+		[2, [0, 1, 1, 0],
+		[1, 1, 1, 1],
+		[1, 1, 1, 1],
+		[0, 1, 1, 0]],
+		
+		[1, [0, 1, 1, 0],
+		[1, 2, 2, 1],
+		[1, 2, 2, 1],
+		[0, 1, 1, 0]],
+		
+		[2, [1, 1], [1, 1]],
+		[1, [1, 1], [1, 1]]
+	], [
+		[1, [0, 1, 2, 2, 1, 0],
+		[1, 2, 3, 3, 2, 1],
+		[2, 3, 3, 3, 3, 2],
+		[2, 3, 3, 3, 3, 2],
+		[1, 2, 3, 3, 2, 1],
+		[0, 1, 2, 2, 1, 0]],
+		
+		[1, [2, 2],
+		[2, 2, 2],
+		[0, 2, 2, 2],
+		[0, 0, 2, 2, 2],
+		[0, 0, 0, 2, 2, 2],
+		[0, 0, 0, 0, 2, 2, 2],
+		[0, 0, 0, 0, 0, 2, 2, 2],
+		[0, 0, 0, 0, 0, 0, 2, 2]],
+		
+		[1, [2, 2],
+		[2, 2],
+		[2, 2],
+		[2, 2],
+		[2, 2],
+		[2, 2]],
+		
+		[1, [1]]
+	]]
 #-
 def genMeteor(thisMet, mod):
 	speed = thisMet[0]
@@ -569,7 +613,8 @@ def shoot():
 	global timer
 	#print "pew"
 	timer.guncool = ship.gun.cooldown
-	temp = proj(ship.gun.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), ship.gun.size, ship.gun.speed, ship.gun.move, ship.gun.dmg, ship.gun.pic)
+	temp = proj(ship.gun.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), ship.gun.size, ship.gun.speed, ship.gun.move, ship.gun.dmg, ship.gun.pic, ship.gun.id)
+	
 	projectiles.append(temp)
 	
 	ship.gun.fires += 1
@@ -592,11 +637,14 @@ def calcEff():
 	global metdestroyed
 	global timer
 	global s
+	global psych
 	try:
 		efficiency = float(allshots - pershots)/float(allshots)
 	except ZeroDivisionError:
 		efficiency = 1
 	score, keeping = timer.time + math.floor(10 * metdestroyed * efficiency) + ((mult.difficulty+1) * 500 * bossesbeat), True
+	if psych:
+		score = math.floor(score * 1.5)
 	score, nscore = str(score), ""
 	for i in score:
 		if i == ".":
@@ -622,7 +670,7 @@ def calcEff():
 		
 print "setup complete."
 #Version
-print "pewpew version 0.3"
+print "pewpew version 0.3.1"
 
 Looping = True
 while Looping:
@@ -668,6 +716,9 @@ while Looping:
 				if event.key == K_DOWN:
 					Running = False
 					mult = multipliers(3, 40, 5, 5, 8, 10)
+				if event.key == K_t:
+					Running = False
+					mult = multipliers(4, 2, 2, 2, 50, 1)
 		pygame.display.update()
 		clock.tick(60)
 
@@ -694,7 +745,9 @@ while Looping:
 	Meteors = AllMeteors[mult.difficulty]
 	
 
-	if mult.difficulty == 3:
+	if mult.difficulty == 2:
+		equip(Gunbarrer)
+	elif mult.difficulty == 3:
 		equip(upgrades[random.randint(0, len(upgrades)-1)])
 	else:
 		equip(gunbase)
@@ -708,25 +761,55 @@ while Looping:
 	lefting = False
 	righting = False
 	shooting = False
+	hasDefender = False
 	mommod = 2
 	allshots, pershots = 0, float(0)
 	alldam, potdam = 0, 0
 	fps = 60
 	isAlive = True
+	RecentDamage = 0
+	crit = 0
 	print "setup complete."
 	#Version
 	print "pewpew version 0.3"
+	localrand = False
+	
+	def killBoss():
+		global fps
+		global mult
+		global boss
+		global particles
+		global bossesbeat
+		global bosstime
+		global timer
+		
+		fps = 10
+		mult.meteors /= 2
+		localrand = math.floor(boss.size[0]/10)
+		for z in range(9):
+			pos1 = random.randint((boss.coords[0]+(z*localrand)), (boss.coords[0]+((z+1)*localrand)))
+			pos2 = random.randint(boss.coords[1], (boss.coords[1]+boss.size[1]))
+			particles.append(particle([pos1, pos2], [10, 10], [random.randint(-2, 2), random.randint(-1, 3)], firebit))
+		boss.on = 0
+		bossesbeat += 1
+		rand = (500/mult.cooldown)-(bossesbeat*10)
+		if rand < 10:
+			rand = 10
+		boss = Boss(1+bossesbeat, (300+(150*bossesbeat))*mult.hp, 5+bossesbeat, (150, 50), 10, rand, pygame.image.load('imgs/pewpew_enmBoss.png'))
+		boss.coords = ((screenX/2)-(boss.size[0]/2), -boss.size[1])
+		bosstime = timer.time + 6000
 
 	#genMeteor(genMetor.genMetor(mult.difficulty, 5, 5, 5), (screenX/2, 20))
 
 	#main loop
 	Running = True
 	while Running:
-		Screen.fill(Black) #Reset screen
-		timer.backdrop += mult.speed
-		if timer.backdrop >= 0:
-			timer.backdrop = screenY-1000
-		Screen.blit(backimage, (0, timer.backdrop))
+		if not psych:
+			Screen.fill(Black) #Reset screen
+			timer.backdrop += mult.speed
+			if timer.backdrop >= 0:
+				timer.backdrop = screenY-1000
+			Screen.blit(backimage, (0, timer.backdrop))
 					
 		timer.time += mult.time
 		if timer.time == bosstime:
@@ -739,14 +822,22 @@ while Looping:
 				fps = 60
 		if not isAlive and fps > 0:
 			fps -= 1
+			timer.neardead += 1/float(fps) #seconds? probably. 1/60th of a second at 60 fps to 1/1 at 1 fps
 			if fps < 2:
 				Running = False
+		#add near death counter?
+				
 		timer.meteors -= 1
 		if timer.meteors <= 0:
 			timer.meteors = mult.meteors
 			#print "New meteor"
 			genMeteor(Meteors[random.randint(0,len(Meteors)-1)], (random.randint(0-20, screenX+20), 0-100))
-			
+		if timer.time % 10 == 0 and RecentDamage > 0:
+			RecentDamage -= 1
+			if RecentDamage > 60 and not (ship.gun.id in [Gungatling.id, guntommy.id]):
+				RecentDamage -= 2
+				if RecentDamage > 300:
+					RecentDamage -= 2
 		
 		#player movement
 		timer.move -= 1
@@ -757,6 +848,9 @@ while Looping:
 				ship.coords = (screenX-ship.size[0], ship.coords[1])
 			if ship.coords[0] < 0:
 				ship.coords = (0, ship.coords[1])
+			for i in projectiles:
+				if i.id == "Defender":
+					i.coords = (ship.coords[0] - 7, i.coords[1])
 				
 		if isAlive:
 			thisship = shippng
@@ -775,9 +869,15 @@ while Looping:
 				alive = True
 				for n in range(i.speed):
 					i.coords = (i.coords[0], i.coords[1]-i.move)
+					if i.id in ["Wall Placer", "Defender"]:
+						if i.move > 0:
+							i.move -= 1
+						if i.move == 0:
+							i.speed = 4
 					for x in meteors:
 						if collide(i.coords, i.size, x.coords, x.size):
-							particles.append(particle([x.coords[0]+(x.size[0]/2), x.coords[1]], [10, 10], [0, random.randint(x.speed-1, x.speed+1)], crumblepic))
+							particles.append(particle(center(x), [10, 10], [0, random.randint(x.speed-1, x.speed+1)], crumblepic))
+							RecentDamage += i.dmg if x.hp > i.dmg else x.hp
 							x.hp -= i.dmg
 							i.hp -= x.dmg
 							prints("Boolet: " + str(i.hp))
@@ -785,48 +885,103 @@ while Looping:
 								Screen.blit(i.pic, i.coords)
 								alive = False
 								allshots += 1
+								if i.id == "Defender":
+									hasDefender = False
+									particles.append(particle(center(i), [10, 10], [random.randint(-1, 1), random.randint(-1, 1)], sparks))
+								if i.id == "Wall Placer":
+									misc = center(i)
+									particles.append(particle([misc[0]-random.randint(1, 10), 2], [10, 10], [random.randint(-1, 1), random.randint(-1, 1)], sparks))
+									particles.append(particle([misc[0], 2], [10, 10], [random.randint(-1, 1), random.randint(-1, 1)], sparks))
+									particles.append(particle([misc[0]+random.randint(1, 10), 2], [10, 10], [random.randint(-1, 1), random.randint(-1, 1)], sparks))
 							prints("Meteor: " + str(x.hp))
 							if x.hp <= 0:
 								meteors.remove(x)
 								metdestroyed += 1
 						if not alive:
 							break
-						else:
-							if collide(i.coords, i.size, boss.coords, boss.size) and boss.on == 1:
-								particles.append(particle([i.coords[0]+(i.size[0]/2), i.coords[1]-i.move], [10, 10], [0, 1], explosionpic))
-								prints("hit boss")
-								boss.hp -= i.dmg
-								i.hp -= boss.dmg
-								prints("Boolet: " + str(i.hp))
-								if i.hp <= 0:
-									Screen.blit(i.pic, i.coords)
-									alive = False
-								prints("Boss: " + str(boss.hp))
-								if boss.hp <= 0:
-									fps = 10
-									mult.meteors /= 2
-									localrand = math.floor(boss.size[0]/10)
-									for z in range(9):
-										pos1 = random.randint((boss.coords[0]+(z*localrand)), (boss.coords[0]+((z+1)*localrand)))
-										pos2 = random.randint(boss.coords[1], (boss.coords[1]+boss.size[1]))
-										particles.append(particle([pos1, pos2], [10, 10], [random.randint(-2, 2), random.randint(-1, 3)], firebit))
-									boss.on = 0
-									bossesbeat += 1
-									rand = (500/mult.cooldown)-(bossesbeat*10)
-									if rand < 10:
-										rand = 10
-									boss = Boss(1+bossesbeat, (300+(150*bossesbeat))*mult.hp, 5+bossesbeat, (150, 50), 10, rand, pygame.image.load('imgs/pewpew_enmBoss.png'))
-									boss.coords = ((screenX/2)-(boss.size[0]/2), -boss.size[1])
-									bosstime = timer.time + 6000
-									
-					if not alive:
+					
+					if alive:
+						if collide(i.coords, i.size, boss.coords, boss.size) and boss.on == 1:
+							particles.append(particle([i.coords[0]+(i.size[0]/2), i.coords[1]-i.move], [10, 10], [0, 1], explosionpic))
+							prints("hit boss")
+							RecentDamage += i.dmg if x.hp > i.dmg else x.hp
+							boss.hp -= i.dmg
+							i.hp -= boss.dmg
+							prints("Boolet: " + str(i.hp))
+							if i.hp <= 0:
+								Screen.blit(i.pic, i.coords)
+								alive = False
+							prints("Boss: " + str(boss.hp))
+							if boss.hp <= 0:
+								killBoss()
+					else:
 						break
-				
-				if ship.gun.spec:
-					if ship.gun.id == "Laser Beam":
-						pygame.draw.line(Screen, (100, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 2)
+						
+				if i.id in ["Wall Placer", "Defender"]:
+					hpratio = Decimal(i.hp)/Decimal(i.basehp)
+					pygame.draw.aaline(Screen, (max(225-225*hpratio, 0), max(225*hpratio, 0), 0), (i.coords[0], i.coords[1]+5), (i.coords[0]+int(hpratio*i.size[0]/2), i.coords[1]+5), True)
+					pygame.draw.aaline(Screen, (max(225-225*hpratio, 0), max(225*hpratio, 0), 0), (i.coords[0]+i.size[0], i.coords[1]+5), (i.coords[0]+i.size[0]-int(hpratio*i.size[0]/2), i.coords[1]+5), True)
+					if i.hp < i.basehp:
+						i.hp += 0.5
+						if i.hp < i.basehp * (5-mult.difficulty)/4:
+							i.hp -= 0.25
+				if i.id == "Laser Beam":
+					pygame.draw.line(Screen, (130, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 2)
+				if i.id == "Decimator":
+					pygame.draw.line(Screen, (200, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 4)
+				if i.id == "Ender":
+					pygame.draw.line(Screen, (100, 0, 0), (ship.coords[0]+2, ship.coords[1]-10), (ship.coords[0]+2, 0), 20)
+					pygame.draw.line(Screen, (200, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, 0), 4)
 				Screen.blit(i.pic, i.coords)
 				if not alive:
+					if i.id in ["Bomb Launcher", "Nuclear Charge"]:
+						if i.id == "Nuclear Charge":
+							B = 3 #boost
+						else:
+							B = 1
+						localrand2 = len(meteors)
+						#particles
+						#Boss
+						BR = (i.coords[0]-58*B, i.coords[1]-58*B) #blast radius
+						if collide(BR, (120*B, 120*B), boss.coords, boss.size) and boss.on:
+							Xover = max(0, min(boss.coords[0]+boss.size[0], BR[0]+120*B)-max(boss.coords[0], BR[0]))
+							Yover = max(0, min(boss.coords[1]+boss.size[1], BR[1]+120*B)-max(boss.coords[1], BR[1]))
+							overlap = Xover * Yover
+							#print overlap
+							RecentDamage += B*overlap/100 if boss.hp > overlap/100 else boss.hp
+							boss.hp -= B*overlap/100
+							if boss.hp <= 0:
+								killBoss()
+						
+						pygame.draw.circle(Screen, (200, 200, 200, 0.05), center(i), 60*B)
+						pygame.draw.circle(Screen, (250, 250, 250, 0.1), center(i), 35*B)
+						
+						#Meteors
+						for n in range(localrand2):
+							x = meteors[localrand2-(n+1)]
+							xdiff = (center(i)[0]-(center(x)[0]))
+							'''if int(xdiff) == 0:
+								xdiff = 0.1'''
+							ydiff = (center(i)[1]-(center(x)[1]))
+							'''if int(ydiff) == 0:
+								ydiff = -0.1'''
+							distance = math.hypot(xdiff, ydiff)
+							if distance < 60*B:
+								if distance < 0.1:
+									distance = 0.1
+								dmg = math.floor(80*B / distance)
+								if distance > 35*B:
+									dmg *= 0.6
+								else:
+									if psych:
+										particles.append(particle(center(x), [10, 10], [xdiff*(1/distance), (abs(x.speed)*ydiff)*(1/distance)], crumblepic))
+									else:
+										particles.append(particle(center(x), [10, 10], [xdiff*(-1/distance), (abs(x.speed)*ydiff)*(-1/distance)], crumblepic))
+								RecentDamage += int(dmg) if x.hp > dmg else x.hp
+								x.hp -= int(dmg)
+								if x.hp <= 0:
+									meteors.remove(x)
+									metdestroyed += 1
 					projectiles.remove(i)
 		
 		
@@ -841,11 +996,13 @@ while Looping:
 					i.timer = i.timerBase
 					meteors.append(meteor(i.hp-3, i.coords, (i.hp-2)*2))
 			#movement
-			for n in range(i.speed):
+			for n in range(int(i.speed)):
 				i.coords = (i.coords[0], i.coords[1]+mult.speed)
 				if collide(ship.coords, ship.size, i.coords, i.size):
 					if isAlive:
-						particles.append(particle([ship.coords[0]+(ship.size[0]/2), ship.coords[1]], [10, 10], [0, 1], explosionpic))
+						temp = center(ship)
+						particles.append(particle([temp[0], ship.coords[1]], [10, 10], [0, 1], explosionpic))
+						particles.append(particle([temp[0]+random.randint(-1, 1), temp[1]+random.randint(-1, 1)], [10, 10], [0, 1], sparks))
 					thisship = dmgpng
 					temp = i.dmg
 					i.hp -= ship.dmg
@@ -931,8 +1088,22 @@ while Looping:
 					boss.hp = 1
 				if event.key == K_y and OP:
 					ship.hp += 5
-				if event.key == K_l and OP:
-					equip(gunlazer)
+				if event.key == K_1 and OP:
+					equip(Gungatling)
+				if event.key == K_2 and OP:
+					equip(Gunbarrer)
+				if event.key == K_3 and OP:
+					equip(Gunrail)
+				if event.key == K_4 and OP:
+					equip(Gundrill)
+				if event.key == K_5 and OP:
+					equip(Gunlazer)
+				if event.key == K_6 and OP:
+					equip(Gunwall)
+				if event.key == K_7 and OP:
+					equip(Gunbomb)
+				if event.key == K_8 and OP:
+					equip(GunGod)
 				#debug
 				if event.key == K_d:
 					if debugon:
@@ -964,7 +1135,22 @@ while Looping:
 				if collide(i.coords, i.size, ship.coords, ship.size):
 					powerups.remove(i)
 					misc = random.randint(0, len(upgrades)-1)
-					equip(upgrades[misc])
+					crit = ship.hp * (mult.difficulty+0.5) + RecentDamage
+					print "       "+str(crit)
+					if random.randint(30, 400) <= crit:
+						if crit > 400 and random.randint(400, 1000) < crit:
+							equip(GunGod)
+						else:
+							if misc == 5:
+								if hasDefender:
+									equip(gunwall)
+								else:
+									equip(Gunwall)
+									hasDefender = True
+							else:
+								equip(supers[misc])
+					else:
+						equip(upgrades[misc])
 					break
 				else:
 					Screen.blit(i.pic, i.coords)
@@ -1002,23 +1188,40 @@ while Looping:
 			hpratio = (Decimal(ship.hp)/Decimal(ship.basehp))*100
 			if hpratio >= 100:
 				hpratio = float(hpratio)
-			misc = "Health: "+str(hpratio)+"%"
-			dialog = font.render(misc, True, White)    
+			if ship.hp < 0:
+				misc = "Open hull"
+				dialog = font.render(misc, True, (225, 150, 150))  
+			else:
+				misc = "Health: "+str(hpratio)+"%"
+				dialog = font.render(misc, True, White)    
 			Screen.blit(dialog, [0,screenY-32])
 			dialog = font.render("Meters: "+str(timer.time), True, White)
 			Screen.blit(dialog, [screenX/2, screenY-32])
+			
+			
+			dialog = font.render("dmg: "+str(RecentDamage), True, White)
+			Screen.blit(dialog, [0, 0])
+			dialog = font.render("Crit: "+str(ship.hp * (mult.difficulty+0.5) + RecentDamage), True, White)
+			Screen.blit(dialog, [0, 20])
+			
 			if ship.gun.id > 0:
 				dialog = font.render("::"+ship.gun.id, True, White)    
 				Screen.blit(dialog, [0, screenY-64])
-				dialog = font.render("Fires remaining: "+str(ship.gun.maxfires-ship.gun.fires+1), True, White)    
+				dialog = font.render("Shots remaining: "+str(ship.gun.maxfires-ship.gun.fires+1), True, White)    
 				Screen.blit(dialog, [screenX/2, screenY-64])
 		else:
 			pass
 
+		'''if localrand != False:
+			pygame.draw.circle(Screen, (255, 255, 255), localrand, 60, 2)
+			pygame.draw.circle(Screen, (255, 255, 255), localrand, 40, 2)
+			pygame.display.update()
+			raw_input("")'''
+			
 		pygame.display.update()
 		clock.tick(fps)
 
-
+	print timer.neardead
 	if mult.difficulty == 0:
 		l1 = "You cleaned up "+str(timer.time)+" meters."
 		l2, l5 = str(metdestroyed) + " meteor units sweeped ", "at "+str(math.floor(efficiency*100))+"% efficiency."
