@@ -34,6 +34,7 @@ wall4 = pygame.image.load('imgs/pewpew_enm_1.png')
 wall5 = pygame.image.load('imgs/pewpew_enm2.png')
 wall6 = pygame.image.load('imgs/pewpew_enm3.png')
 pewpic = pygame.image.load('imgs/boolet.png')
+bossimg = pygame.image.load('imgs/pewpew_enmBoss.png')
 drillpic = pygame.image.load('imgs/gundrill.png')
 railpic = pygame.image.load('imgs/gunrail.png')
 shieldpic = pygame.image.load('imgs/gunshield.png')
@@ -152,20 +153,33 @@ class particle(object): #speed is tuple of x and y speed
 		global retimer
 		self.timer = retimer
 			
+#note to future: probably can make faster by directly referencing to the gun's base object
+#and grabbing it's stats. May also need to reference the modifiers if they apply
 class proj(object):
-	def __init__(self, hp, coords, size, speed, move, damage, pic, id):
+	def __init__(self, hp, coords, size, speed, move):
 		self.hp = hp
 		self.basehp = hp
 		self.coords = coords
 		self.size = size
 		self.speed = speed
 		self.move = move
+		self.dmg = 0
+		self.pic = None
+		self.id = None
+		self.crit = 0
+		self.counts = True
+
+	def complete(self, damage, pic, id, crit, counts):
 		self.dmg = damage
 		self.pic = pic
 		self.id = id
+		self.crit = crit
+		self.counts = counts
+
+#temp = proj(ship.gun.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), ship.gun.size, ship.gun.speed, ship.gun.move, ship.gun.dmg, ship.gun.pic, ship.gun.id)
 
 class gun(object):
-	def __init__(self, id, hpmod, hp, fires, size, speed, move, damage, cooldown, pic, spec = False):
+	def __init__(self, id, hpmod, hp, fires, size, speed, move, damage, cooldown, pic):
 		self.hp = hp
 		self.hpmod = hpmod
 		self.fires = 0
@@ -177,27 +191,51 @@ class gun(object):
 		self.id = id
 		self.cooldown = cooldown
 		self.pic = pic
-		self.spec = spec
+		self.ban = False # if this weapon is not supported
+		self.crit = 1
+		self.screenCount = True #if this weapon counts against bullet efficiency
+	def setBonus(self, ban, crit = 1, counts = True):
+		self.ban = ban
+		self.crit = crit
+		self.screenCount = counts;
+	def makeProj(self, shipCoords):
+
+		temp = proj(self.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), self.size, self.speed, self.move)
+		temp.complete(self.dmg, self.pic, self.id, self.crit, self.screenCount)
+		return temp
 
 gunbase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, pewpic)
 gunrail = gun("Railgun", 1, 2, 10, (2, 10), 10, 10, 25, 28, railpic)
-Gunrail = gun("Scientific", 0, 2000, 2, (30, 30), 50, 10, 30, 60, chargepic)
+Gunrail = gun("Scientific", -2, 2000, 2, (30, 30), 50, 10, 30, 60, chargepic)
+Gunrail.setBonus(True, 1, False) #destructive to ship
 #gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, lazerpic) #Time dialator
-pewlazer = gun("Laser Beam", 0, 1, 220, (2, 10), 50, 10, 0.5, -1, lightpic, True)
-Gunlazer = gun("Decimator", -1, 1, 220, (4, 10), 50, 10, 1, -1, lightpic, True)
+pewlazer = gun("Laser Beam", 0, 1, 220, (2, 10), 50, 10, 0.5, -1, lightpic)
+Gunlazer = gun("Decimator", -1, 1, 220, (4, 10), 50, 10, 1, -1, lightpic)
 GunGod = gun("Ender", -50, 200, 300, (20, 500), 1, 500, 1, -1, chargepic)
-gunbomb = gun("Bomb Launcher", 2, 4, 6, (4, 4), 2, 1, 1, 30, bombpic, True)
+GunGod.setBonus(True, 0.25, False) #don't fall to ender spam and -1000 hp
+gunbomb = gun("Bomb Launcher", 2, 4, 6, (4, 4), 2, 1, 1, 30, bombpic)
+gunbomb.setBonus(True, 0.8)
 Gunbomb = gun("Nuclear Charge", 2, 4, 1, (4, 4), 1, 2, 1, 30, bombpic)
+Gunbomb.setBonus(False, 0.8)
 
 gundrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, drillpic)
 Gundrill = gun("Excavator", 3, 200, 1, (30, 30), 1, 1, 1, 40, excavpic)
+Gundrill.setBonus(False, 1, False)
 gunshield = gun("Shield Thrower", 10, 20, 1, (20, 5), 1, 1, 1, 50, shieldpic)
 Gunbarrer = gun("Shielding", 20, 10, 1, (20, 5), 1, 1, 1, 50, shieldpic)
 guntommy = gun("Tommy Gun", 2, 1, 80, (2, 2), 4, 3, 2, 15, pewpic)
-Gungatling = gun("Gatling", 2, 1, 200, (2, 4), 3, 5, 3, 10, pewpic)
+guntommy.setBonus(True, 6) #bootleg
+Gungatling = gun("Gatling", 2, 1, 200, (2, 4), 3, 5, 2, 10, pewpic)
+Gungatling.setBonus(False, 8)
 gunop = gun("God gun", 50, 100, 1000, (50, 5), 6, 2, 30, 0, hypershieldpic)
 gunwall = gun("Wall Placer", 1, 56, 1, (50, 20), 1, 5, 1, 50, hypershieldpic)
+gunwall.setBonus(False, 0) #no recent damage gain from wall damage
 Gunwall = gun("Defender", 2, 20, 1, (20, 10), 1, 3, 1, 50, shieldpic)
+#gunwall.setBonus(False, 0.5)
+
+gunreduce = gun("Reducer", 1, 10000, 1, (screenX*2, screenY), 1, screenY, 1, 1, backimage)
+gunreduce.setBonus(True, 1, False) #not confirmed safe
+
 upgrades = [gunrail, pewlazer, gundrill, gunshield, guntommy, gunwall, gunbomb]
 supers = [Gunrail, Gunlazer, Gundrill, Gunbarrer, Gungatling, Gunwall, Gunbomb]
 			
@@ -613,8 +651,8 @@ def shoot():
 	global timer
 	#print "pew"
 	timer.guncool = ship.gun.cooldown
-	temp = proj(ship.gun.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), ship.gun.size, ship.gun.speed, ship.gun.move, ship.gun.dmg, ship.gun.pic, ship.gun.id)
-	
+	#temp = proj(ship.gun.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), ship.gun.size, ship.gun.speed, ship.gun.move, ship.gun.dmg, ship.gun.pic, ship.gun.id)
+	temp = ship.gun.makeProj(ship.coords)
 	projectiles.append(temp)
 	
 	ship.gun.fires += 1
@@ -716,7 +754,7 @@ while Looping:
 				if event.key == K_DOWN:
 					Running = False
 					mult = multipliers(3, 40, 5, 5, 8, 10)
-				if event.key == K_t:
+				if event.key == K_t: #testing. some regular shaped meteors
 					Running = False
 					mult = multipliers(4, 2, 2, 2, 50, 1)
 		pygame.display.update()
@@ -769,7 +807,7 @@ while Looping:
 	isAlive = True
 	RecentDamage = 0
 	crit = 0
-	print "setup complete."
+	print "Let the game begin."
 	#Version
 	print "pewpew version 0.3"
 	localrand = False
@@ -795,7 +833,7 @@ while Looping:
 		rand = (500/mult.cooldown)-(bossesbeat*10)
 		if rand < 10:
 			rand = 10
-		boss = Boss(1+bossesbeat, (300+(150*bossesbeat))*mult.hp, 5+bossesbeat, (150, 50), 10, rand, pygame.image.load('imgs/pewpew_enmBoss.png'))
+		boss = Boss(1+bossesbeat, (300+(150*bossesbeat))*mult.hp, 5+bossesbeat, (150, 50), 10, rand, bossimg)
 		boss.coords = ((screenX/2)-(boss.size[0]/2), -boss.size[1])
 		bosstime = timer.time + 6000
 
@@ -834,6 +872,8 @@ while Looping:
 			genMeteor(Meteors[random.randint(0,len(Meteors)-1)], (random.randint(0-20, screenX+20), 0-100))
 		if timer.time % 10 == 0 and RecentDamage > 0:
 			RecentDamage -= 1
+			if RecentDamage < 1:
+				RecentDamage = 0
 			if RecentDamage > 60 and not (ship.gun.id in [Gungatling.id, guntommy.id]):
 				RecentDamage -= 2
 				if RecentDamage > 300:
@@ -862,11 +902,27 @@ while Looping:
 		#boolet movement
 		for i in projectiles:
 			if not collide(i.coords, i.size, (0, 0), (screenX, screenY)):
-				pershots = Decimal(float(pershots) + float(i.hp)/float(i.basehp))
+				if i.counts:
+					pershots = Decimal(float(pershots) + float(i.hp)/float(i.basehp))
+				else:
+					#pershots = Decimal(float(pershots) + float(i.basehp)-float(i.hp))
+					pass #I don't remember how this works
 				allshots += 1
 				projectiles.remove(i)
 			else:
 				alive = True
+				if i.id == "Skipper":
+					if boss.on:
+						mult.meteors /= 2
+						localrand = math.floor(boss.size[0]/10)
+						boss.on = 0
+						rand = (500/mult.cooldown)-(bossesbeat*10)
+						if rand < 10:
+							rand = 10
+						boss = Boss(1+bossesbeat, (300+(150*bossesbeat))*mult.hp, 5+bossesbeat, (150, 50), 10, rand, bossimg)
+						boss.coords = ((screenX/2)-(boss.size[0]/2), -boss.size[1])
+						bosstime = timer.time + 6000
+
 				for n in range(i.speed):
 					i.coords = (i.coords[0], i.coords[1]-i.move)
 					if i.id in ["Wall Placer", "Defender"]:
@@ -877,7 +933,7 @@ while Looping:
 					for x in meteors:
 						if collide(i.coords, i.size, x.coords, x.size):
 							particles.append(particle(center(x), [10, 10], [0, random.randint(x.speed-1, x.speed+1)], crumblepic))
-							RecentDamage += i.dmg if x.hp > i.dmg else x.hp
+							RecentDamage += (i.dmg*i.crit) if x.hp > i.dmg else (x.hp*i.crit)
 							x.hp -= i.dmg
 							i.hp -= x.dmg
 							prints("Boolet: " + str(i.hp))
@@ -904,7 +960,7 @@ while Looping:
 						if collide(i.coords, i.size, boss.coords, boss.size) and boss.on == 1:
 							particles.append(particle([i.coords[0]+(i.size[0]/2), i.coords[1]-i.move], [10, 10], [0, 1], explosionpic))
 							prints("hit boss")
-							RecentDamage += i.dmg if x.hp > i.dmg else x.hp
+							RecentDamage += (i.dmg*i.crit) if x.hp > i.dmg else (x.hp*i.crit)
 							boss.hp -= i.dmg
 							i.hp -= boss.dmg
 							prints("Boolet: " + str(i.hp))
@@ -917,7 +973,7 @@ while Looping:
 					else:
 						break
 						
-				if i.id in ["Wall Placer", "Defender"]:
+				if i.id in ["Wall Placer", "Defender"]: #draw hp lines / regen
 					hpratio = Decimal(i.hp)/Decimal(i.basehp)
 					pygame.draw.aaline(Screen, (max(225-225*hpratio, 0), max(225*hpratio, 0), 0), (i.coords[0], i.coords[1]+5), (i.coords[0]+int(hpratio*i.size[0]/2), i.coords[1]+5), True)
 					pygame.draw.aaline(Screen, (max(225-225*hpratio, 0), max(225*hpratio, 0), 0), (i.coords[0]+i.size[0], i.coords[1]+5), (i.coords[0]+i.size[0]-int(hpratio*i.size[0]/2), i.coords[1]+5), True)
@@ -925,11 +981,11 @@ while Looping:
 						i.hp += 0.5
 						if i.hp < i.basehp * (5-mult.difficulty)/4:
 							i.hp -= 0.25
-				if i.id == "Laser Beam":
+				if i.id == "Laser Beam": #draw line
 					pygame.draw.line(Screen, (130, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 2)
-				if i.id == "Decimator":
+				if i.id == "Decimator": #draw line
 					pygame.draw.line(Screen, (200, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 4)
-				if i.id == "Ender":
+				if i.id == "Ender": #draw lines
 					pygame.draw.line(Screen, (100, 0, 0), (ship.coords[0]+2, ship.coords[1]-10), (ship.coords[0]+2, 0), 20)
 					pygame.draw.line(Screen, (200, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, 0), 4)
 				Screen.blit(i.pic, i.coords)
@@ -948,7 +1004,7 @@ while Looping:
 							Yover = max(0, min(boss.coords[1]+boss.size[1], BR[1]+120*B)-max(boss.coords[1], BR[1]))
 							overlap = Xover * Yover
 							#print overlap
-							RecentDamage += B*overlap/100 if boss.hp > overlap/100 else boss.hp
+							RecentDamage += i.crit*B*overlap/100 if boss.hp > overlap/100 else boss.hp*i.crit
 							boss.hp -= B*overlap/100
 							if boss.hp <= 0:
 								killBoss()
@@ -977,7 +1033,7 @@ while Looping:
 										particles.append(particle(center(x), [10, 10], [xdiff*(1/distance), (abs(x.speed)*ydiff)*(1/distance)], crumblepic))
 									else:
 										particles.append(particle(center(x), [10, 10], [xdiff*(-1/distance), (abs(x.speed)*ydiff)*(-1/distance)], crumblepic))
-								RecentDamage += int(dmg) if x.hp > dmg else x.hp
+								RecentDamage += int(dmg)*i.crit if x.hp > dmg else x.hp*i.crit
 								x.hp -= int(dmg)
 								if x.hp <= 0:
 									meteors.remove(x)
@@ -990,7 +1046,7 @@ while Looping:
 			if not collide(i.coords, i.size, (0, 0-100), (screenX, screenY)):
 				meteors.remove(i)
 			alive = True
-			if i.hp >= 4:
+			if int(i.hp) >= 4:
 				i.timer -= 1
 				if i.timer <= 0:
 					i.timer = i.timerBase
@@ -1019,17 +1075,17 @@ while Looping:
 				if not alive:
 					break
 			try:
-				if i.hp == 1:
+				if int(i.hp) == 1:
 					thiswall = wall1
-				if i.hp == 2:
+				if int(i.hp) == 2:
 					thiswall = wall2
-				if i.hp == 3:
+				if int(i.hp) == 3:
 					thiswall = wall3
-				if i.hp == 4:
+				if int(i.hp) == 4:
 					thiswall = wall4
-				if i.hp == 5:
+				if int(i.hp) == 5:
 					thiswall = wall5
-				if i.hp == 6:
+				if int(i.hp) == 6:
 					thiswall = wall6
 				Screen.blit(thiswall, i.coords)
 			except NameError:
@@ -1104,6 +1160,8 @@ while Looping:
 					equip(Gunbomb)
 				if event.key == K_8 and OP:
 					equip(GunGod)
+				if event.key == K_9 and OP:
+					equip(gunreduce)
 				#debug
 				if event.key == K_d:
 					if debugon:
@@ -1190,7 +1248,7 @@ while Looping:
 				hpratio = float(hpratio)
 			if ship.hp < 0:
 				misc = "Open hull"
-				dialog = font.render(misc, True, (225, 150, 150))  
+				dialog = font.render(misc, True, (225, 180, 180))  
 			else:
 				misc = "Health: "+str(hpratio)+"%"
 				dialog = font.render(misc, True, White)    
@@ -1204,11 +1262,31 @@ while Looping:
 			dialog = font.render("Crit: "+str(ship.hp * (mult.difficulty+0.5) + RecentDamage), True, White)
 			Screen.blit(dialog, [0, 20])
 			
-			if ship.gun.id > 0:
-				dialog = font.render("::"+ship.gun.id, True, White)    
-				Screen.blit(dialog, [0, screenY-64])
-				dialog = font.render("Shots remaining: "+str(ship.gun.maxfires-ship.gun.fires+1), True, White)    
-				Screen.blit(dialog, [screenX/2, screenY-64])
+			#gun name
+			dialog = font.render("::"+ship.gun.id, True, White)
+			Screen.blit(dialog, [0, screenY-64])
+
+			#Gun cooldown visual
+			if ship.gun.cooldown > 0:
+				fireratio = Decimal(timer.guncool)/Decimal(ship.gun.cooldown)
+				fireratio = max(min(1, fireratio), 0)
+				pygame.draw.line(Screen, (255, 0, 0), (0, screenY-55), (100, screenY-55), 1)
+				pygame.draw.line(Screen, (max(225*fireratio, 0), max(225-(225*fireratio), 0), 0), (0, screenY-55), (100-int(fireratio*100), screenY-55), True)
+				if fireratio == 0: #extra bright when ready to fire
+					pygame.draw.line(Screen, (0, 255, 0), (0, screenY-54), (100, screenY-54), 1)
+			else: #if no cooldown
+				pygame.draw.line(Screen, (0, 255, 0), (0, screenY-55), (100, screenY-55), 2)
+
+			dialog = font.render("Shots remaining: "+str(ship.gun.maxfires-ship.gun.fires+1), True, White)    
+			Screen.blit(dialog, [screenX/2, screenY-64])
+			#ammo visual
+			if (ship.gun.maxfires):
+				fireratio = float(Decimal(ship.gun.fires) / Decimal(ship.gun.maxfires+1))
+				pygame.draw.line(Screen, (120, 150, 120), (screenX, screenY-54), (screenX/2, screenY-54), 2) #backing color
+				pygame.draw.line(Screen, (0, 255, 0), (screenX, screenY-54), (screenX * (0.5 + 0.5*fireratio), screenY-54), 2) #ammo
+			else: #blue if only one shot
+				pygame.draw.line(Screen, (80, 80, 255), (screenX, screenY-54), (screenX/2, screenY-54), 2)
+
 		else:
 			pass
 
