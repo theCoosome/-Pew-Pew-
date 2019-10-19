@@ -137,6 +137,8 @@ explosionpic = getpartimg("explosion", 5)
 crumblepic = getpartimg("destintegrate", 4)
 firebit = getpartimg("firebit", 11)
 sparks = getpartimg("spark", 5)
+glows = getpartimg("glow", 6)
+smallglow = getpartimg("glowsmall", 6)
 
 def center(obj):
 	return (obj.coords[0]+(obj.size[0]/2), obj.coords[1]+(obj.size[1]/2))
@@ -897,6 +899,11 @@ while Looping:
 							if x.hp <= 0:
 								meteors.remove(x)
 								metdestroyed += 1
+								if i.id in ["Scientific", "Ender"]:
+									#Screen.blit(chargepic, (x.coords[0], x.coords[1]+10))
+									particles.append(particle(center(x), [16, 16], [0, 0], glows))
+								if i.id == "Decimator":
+									particles.append(particle(center(x), [16, 16], [0, x.speed * mult.speed], smallglow))
 						if not alive:
 							break
 					
@@ -929,14 +936,16 @@ while Looping:
 					pygame.draw.line(Screen, (130, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 2)
 				if i.id == "Decimator":
 					pygame.draw.line(Screen, (200, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, i.coords[1]), 4)
-				if i.id == "Ender":
+				if i.id == "Ender" or i.id == "Scientific":
 					pygame.draw.line(Screen, (100, 0, 0), (ship.coords[0]+2, ship.coords[1]-10), (ship.coords[0]+2, 0), 20)
 					pygame.draw.line(Screen, (200, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, 0), 4)
+				if i.id == "Scientific":
+					pygame.draw.line(Screen, (200, 100, 100), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, 0), 2)
 				Screen.blit(i.pic, i.coords)
 				if not alive:
 					if i.id in ["Bomb Launcher", "Nuclear Charge"]:
 						if i.id == "Nuclear Charge":
-							B = 3 #boost
+							B = 5 #boost
 						else:
 							B = 1
 						localrand2 = len(meteors)
