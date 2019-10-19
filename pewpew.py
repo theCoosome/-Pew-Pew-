@@ -23,6 +23,7 @@ Line = pygame.draw.line
 Rect = pygame.draw.rect
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('Calibri', 15)
+Font = pygame.font.SysFont('Calibri', 30)
 pygame.display.set_caption("Pew Pew")
 OP = True
 #things
@@ -122,11 +123,11 @@ def myreceive():
 class multipliers(object):
     def __init__(self, difficulty, hp, speed, cooldown, meteors, time):
         self.difficulty = difficulty
-        self.hp = hp
-        self.speed = speed
-        self.cooldown = cooldown
-        self.meteors = meteors
-        self.time = time
+        self.hp = hp #boss hp multiplier
+        self.speed = speed # meteor speed multiplier
+        self.cooldown = cooldown # cooldown for upgrades and boss shots (higher is faster)
+        self.meteors = meteors # cooldown between meteors
+        self.time = time # distance multiplier (affects score and boss spawns)
 
 def getpartimg(name, quant):
 	images = []
@@ -138,6 +139,20 @@ explosionpic = getpartimg("explosion", 5)
 crumblepic = getpartimg("destintegrate", 4)
 firebit = getpartimg("firebit", 11)
 sparks = getpartimg("spark", 5)
+
+#build the hud
+backColor = (40, 40, 40)
+backAccent = (50, 50, 50)
+Hud = pygame.Surface((screenX, 95), pygame.SRCALPHA, 32).convert_alpha()
+pygame.draw.rect(Hud, (100, 100, 100), (0, 0, screenX, 5))
+pygame.draw.rect(Hud, (80, 80, 80), (0, 5, screenX, 10))
+pygame.draw.rect(Hud, backAccent, (0, 42, 58, 15))
+pygame.draw.rect(Hud, backAccent, (screenX, 42, -58, 15))
+for i in range(0, 30):
+	pygame.draw.arc(Hud, backAccent, (i/2, 42+i/2, 100-i, 50-i), 0, 1.56, 1)
+	pygame.draw.arc(Hud, backAccent, (150+i/2, 42+i/2, 100-i, 50-i), 1.57, 3.14, 1)
+pygame.draw.rect(Hud, backAccent, (101, 42, 8, 53))
+pygame.draw.rect(Hud, backAccent, (141, 42, 8, 53))
 
 def center(obj):
 	return (obj.coords[0]+(obj.size[0]/2), obj.coords[1]+(obj.size[1]/2))
@@ -229,7 +244,7 @@ Gungatling = gun("Gatling", 2, 1, 200, (2, 4), 3, 5, 2, 10, pewpic)
 Gungatling.setBonus(False, 8)
 gunop = gun("God gun", 50, 100, 1000, (50, 5), 6, 2, 30, 0, hypershieldpic)
 gunwall = gun("Wall Placer", 1, 56, 1, (50, 20), 1, 5, 1, 50, hypershieldpic)
-gunwall.setBonus(False, 0) #no recent damage gain from wall damage
+gunwall.setBonus(False, 0.5) #lessen passive crit gen (health op much)
 Gunwall = gun("Defender", 2, 20, 1, (20, 10), 1, 3, 1, 50, shieldpic)
 #gunwall.setBonus(False, 0.5)
 
@@ -237,7 +252,7 @@ gunreduce = gun("Reducer", 1, 10000, 1, (screenX*2, screenY), 1, screenY, 1, 1, 
 gunreduce.setBonus(True, 1, False) #not confirmed safe
 
 upgrades = [gunrail, pewlazer, gundrill, gunshield, guntommy, gunwall, gunbomb]
-supers = [Gunrail, Gunlazer, Gundrill, Gunbarrer, Gungatling, Gunwall, Gunbomb]
+supers = [Gunrail, Gunlazer, Gundrill, Gunbarrer, Gungatling, Gunwall, Gunbomb, gunreduce]
 			
 class upgrade(object):
 	def __init__(self, coords, interval):
@@ -744,16 +759,16 @@ while Looping:
 				#movement
 				if event.key == K_LEFT:
 					Running = False
-					mult = multipliers(0, 1, 1, 1, 28, 1)
+					mult = multipliers(0, 1, 1.5, 1, 28, 1) #18:1
 				if event.key == K_UP:
 					Running = False
-					mult = multipliers(1, 2, 2, 2, 18, 2)
+					mult = multipliers(1, 2, 2, 2, 20, 2) #14:1
 				if event.key == K_RIGHT:
 					Running = False
-					mult = multipliers(2, 3.5, 3, 2, 10, 4)
+					mult = multipliers(2, 3.5, 3, 2, 10, 4) #25:1
 				if event.key == K_DOWN:
 					Running = False
-					mult = multipliers(3, 40, 5, 5, 8, 10)
+					mult = multipliers(3, 40, 5, 5, 8, 10) #12.5:1
 				if event.key == K_t: #testing. some regular shaped meteors
 					Running = False
 					mult = multipliers(4, 2, 2, 2, 50, 1)
@@ -807,6 +822,7 @@ while Looping:
 	isAlive = True
 	RecentDamage = 0
 	crit = 0
+	buttonPush = 0
 	print "Let the game begin."
 	#Version
 	print "pewpew version 0.3"
@@ -870,7 +886,7 @@ while Looping:
 			timer.meteors = mult.meteors
 			#print "New meteor"
 			genMeteor(Meteors[random.randint(0,len(Meteors)-1)], (random.randint(0-20, screenX+20), 0-100))
-		if timer.time % 10 == 0 and RecentDamage > 0:
+		if timer.time % 12 == 0 and RecentDamage > 0:
 			RecentDamage -= 1
 			if RecentDamage < 1:
 				RecentDamage = 0
@@ -988,6 +1004,9 @@ while Looping:
 				if i.id == "Ender": #draw lines
 					pygame.draw.line(Screen, (100, 0, 0), (ship.coords[0]+2, ship.coords[1]-10), (ship.coords[0]+2, 0), 20)
 					pygame.draw.line(Screen, (200, 0, 0), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, 0), 4)
+				if i.id == "Scientific": #draw lines
+					pygame.draw.line(Screen, (90, 70, 70), (ship.coords[0]+2, ship.coords[1]-10), (ship.coords[0]+2, 0), 30)
+					pygame.draw.line(Screen, (255, 255, 255), (ship.coords[0]+2, ship.coords[1]), (ship.coords[0]+2, 0), 2)
 				Screen.blit(i.pic, i.coords)
 				if not alive:
 					if i.id in ["Bomb Launcher", "Nuclear Charge"]:
@@ -1135,33 +1154,34 @@ while Looping:
 				if event.key == K_g:
 					OP = True
 					print "Opped."
-				if event.key == K_b and OP:
-					mult.meteors *= 2
-					boss.on = 1
-				if event.key == K_v and OP:
-					equip(gunop)
-				if event.key == K_h and OP:
-					boss.hp = 1
-				if event.key == K_y and OP:
-					ship.hp += 5
-				if event.key == K_1 and OP:
-					equip(Gungatling)
-				if event.key == K_2 and OP:
-					equip(Gunbarrer)
-				if event.key == K_3 and OP:
-					equip(Gunrail)
-				if event.key == K_4 and OP:
-					equip(Gundrill)
-				if event.key == K_5 and OP:
-					equip(Gunlazer)
-				if event.key == K_6 and OP:
-					equip(Gunwall)
-				if event.key == K_7 and OP:
-					equip(Gunbomb)
-				if event.key == K_8 and OP:
-					equip(GunGod)
-				if event.key == K_9 and OP:
-					equip(gunreduce)
+				if OP:
+					if event.key == K_p:
+						pause = True
+						while pause:
+							for event in pygame.event.get():
+								if event.type == pygame.KEYDOWN:
+									if event.key == K_p:
+										pause = False
+							#pygame.display.update()
+							clock.tick(30)
+
+					if event.key == K_EQUALS:
+						buttonPush += 1
+					if event.key == K_MINUS:
+						buttonPush -= 1
+					if event.key == K_LEFTBRACKET:
+						equip(upgrades[buttonPush%len(upgrades)])
+					if event.key == K_RIGHTBRACKET:
+						equip(supers[buttonPush%len(supers)])
+					if event.key == K_b:
+						mult.meteors *= 2
+						boss.on = 1
+					if event.key == K_v:
+						equip(gunop)
+					if event.key == K_h:
+						boss.hp = 1
+					if event.key == K_y:
+						ship.hp += 50
 				#debug
 				if event.key == K_d:
 					if debugon:
@@ -1242,50 +1262,68 @@ while Looping:
 				if alive:
 					Screen.blit(i.pics[i.frame], i.coords)
 		
+		pygame.draw.rect(Screen, (40, 40, 40), (0, screenY, screenX, -80))
+
 		if isAlive:
 			hpratio = (Decimal(ship.hp)/Decimal(ship.basehp))*100
 			if hpratio >= 100:
 				hpratio = float(hpratio)
 			if ship.hp < 0:
 				misc = "Open hull"
-				dialog = font.render(misc, True, (225, 180, 180))  
+				dialog = Font.render(misc, True, (255, 100, 100))
+				pygame.draw.line(Screen, (255, 10, 10), (0, 0), (0, screenY-95), 1)
+				pygame.draw.line(Screen, (255, 10, 10), (249, 0), (249, screenY-95), 1)
 			else:
-				misc = "Health: "+str(hpratio)+"%"
-				dialog = font.render(misc, True, White)    
-			Screen.blit(dialog, [0,screenY-32])
+				Screen.blit(font.render("Health", True, White), [5,screenY-35])
+				dialog = Font.render(str(hpratio)+"%", True, White)    
+			Screen.blit(dialog, [5,screenY-23])
 			dialog = font.render("Meters: "+str(timer.time), True, White)
-			Screen.blit(dialog, [screenX/2, screenY-32])
+			Screen.blit(dialog, [190, screenY-35])
 			
 			
 			dialog = font.render("dmg: "+str(RecentDamage), True, White)
 			Screen.blit(dialog, [0, 0])
 			dialog = font.render("Crit: "+str(ship.hp * (mult.difficulty+0.5) + RecentDamage), True, White)
 			Screen.blit(dialog, [0, 20])
+			dialog = font.render(str(buttonPush), True, White)
+			Screen.blit(dialog, [0, 40])
 			
 			#gun name
-			dialog = font.render("::"+ship.gun.id, True, White)
-			Screen.blit(dialog, [0, screenY-64])
+			dialog = Font.render("::"+ship.gun.id, True, White)
+			Screen.blit(dialog, [0, screenY-78])
 
 			#Gun cooldown visual
 			if ship.gun.cooldown > 0:
 				fireratio = Decimal(timer.guncool)/Decimal(ship.gun.cooldown)
 				fireratio = max(min(1, fireratio), 0)
-				pygame.draw.line(Screen, (255, 0, 0), (0, screenY-55), (100, screenY-55), 1)
-				pygame.draw.line(Screen, (max(225*fireratio, 0), max(225-(225*fireratio), 0), 0), (0, screenY-55), (100-int(fireratio*100), screenY-55), True)
-				if fireratio == 0: #extra bright when ready to fire
-					pygame.draw.line(Screen, (0, 255, 0), (0, screenY-54), (100, screenY-54), 1)
+				pygame.draw.line(Screen, (255, 0, 0), (0, screenY-55), (100, screenY-55), 1) #background
+				pygame.draw.line(Screen, (255, 0, 0), (100, screenY-55), (100, screenY-33), 1)
+				color = (max(225*fireratio, 0), max(225-(225*fireratio), 0), 0)
+				pygame.draw.rect(Screen, color, (0, screenY-56, 100-int(fireratio*100), 16))
+				pygame.draw.rect(Screen, color, (250, screenY-56, -100+int(fireratio*100), 16))
+				
+				if fireratio <= 0.1: #extra bright when ready to fire
+					pygame.draw.rect(Screen, (0, 255, 0), (90, screenY-40, 10-(fireratio*100), 7))
+					pygame.draw.rect(Screen, (0, 255, 0), (160, screenY-40, -(10-(fireratio*100)), 7))
 			else: #if no cooldown
-				pygame.draw.line(Screen, (0, 255, 0), (0, screenY-55), (100, screenY-55), 2)
+				pygame.draw.rect(Screen, (0, 255, 0), (0, screenY-56, 100, 15))
+				pygame.draw.rect(Screen, (0, 255, 0), (90, screenY-40, 10, 7))
+				pygame.draw.rect(Screen, (0, 255, 0), (150, screenY-56, 100, 15))
+				pygame.draw.rect(Screen, (0, 255, 0), (150, screenY-40, 10, 7))
 
-			dialog = font.render("Shots remaining: "+str(ship.gun.maxfires-ship.gun.fires+1), True, White)    
-			Screen.blit(dialog, [screenX/2, screenY-64])
+			dialog = font.render(str(ship.gun.maxfires-ship.gun.fires+1), True, White)    
+			Screen.blit(dialog, [111, screenY-14])
 			#ammo visual
 			if (ship.gun.maxfires):
 				fireratio = float(Decimal(ship.gun.fires) / Decimal(ship.gun.maxfires+1))
-				pygame.draw.line(Screen, (120, 150, 120), (screenX, screenY-54), (screenX/2, screenY-54), 2) #backing color
-				pygame.draw.line(Screen, (0, 255, 0), (screenX, screenY-54), (screenX * (0.5 + 0.5*fireratio), screenY-54), 2) #ammo
+				pygame.draw.rect(Screen, (10, 30, 10), (109, screenY-56, 32, 42))
+				pygame.draw.rect(Screen, (200, 200, 200), (110, screenY-55, 30, 40*(1-fireratio)))
+				#pygame.draw.line(Screen, (120, 150, 120), (screenX, screenY-54), (screenX/2, screenY-54), 2) #backing color
+				#pygame.draw.line(Screen, (0, 255, 0), (screenX, screenY-54), (screenX * (0.5 + 0.5*fireratio), screenY-54), 2) #ammo
 			else: #blue if only one shot
-				pygame.draw.line(Screen, (80, 80, 255), (screenX, screenY-54), (screenX/2, screenY-54), 2)
+				pygame.draw.rect(Screen, (80, 80, 255), (110, screenY-55, 30, 40))
+				#pygame.draw.line(Screen, (80, 80, 255), (screenX, screenY-54), (screenX/2, screenY-54), 2)
+ 			
 
 		else:
 			pass
@@ -1295,6 +1333,7 @@ while Looping:
 			pygame.draw.circle(Screen, (255, 255, 255), localrand, 40, 2)
 			pygame.display.update()
 			raw_input("")'''
+ 		Screen.blit(Hud, (0, screenY-95))
 			
 		pygame.display.update()
 		clock.tick(fps)
