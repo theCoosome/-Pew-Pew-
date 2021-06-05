@@ -56,78 +56,77 @@ debugon = False
 RecentDamage = 0
 
 def prints(stuff):
-    global debugon
-    if debugon:
-        print stuff
+	global debugon
+	if debugon:
+		print(stuff)
 
 def cuttofour(number):
-    number = str(number)
-    leng = len(number)
-    if leng > 4:
-        print "Packet too long. Cutting " + str(int(number)-int(number[:4])) + " digits"
-        number = number[:4]
-    if leng < 4:
-        rand = 4-leng
-        #print "splicing " + str(rand) + " leading zeros"
-        for i in range(rand):
-            number = "0"+number
-    return number
+	number = str(number)
+	leng = len(number)
+	if leng > 4:
+		print("Packet too long. Cutting " + str(int(number)-int(number[:4])) + " digits")
+		number = number[:4]
+	if leng < 4:
+		rand = 4-leng
+		for i in range(rand):
+			number = "0"+number
+	return number
 
 def sendinfo(typewords):
-    global s
-    #send size of packet
-    msg = cuttofour(len(typewords))
-    totalsent = 0
-    while totalsent < 4:
-        sent = s.send(msg[totalsent:])
-        if sent == 0:
-            raise RuntimeError("socket connection broken")
-            break
-        totalsent = totalsent + sent
-    #send packet
-    totalsent = 0
-    while totalsent < int(msg):
-        sent = s.send(typewords[totalsent:])
-        if sent == 0:
-            raise RuntimeError("socket connection broken")
-            break
-        totalsent = totalsent + sent
-        
+	global s
+	#send size of packet
+	msg = cuttofour(len(typewords))
+	totalsent = 0
+	while totalsent < 4:
+		sent = s.send(msg[totalsent:])
+		if sent == 0:
+			raise RuntimeError("socket connection broken")
+			break
+		totalsent = totalsent + sent
+	#send packet
+	totalsent = 0
+	while totalsent < int(msg):
+		sent = s.send(typewords[totalsent:])
+		if sent == 0:
+			raise RuntimeError("socket connection broken")
+			break
+		totalsent = totalsent + sent
+		
 def myreceive():
-    #Recieve quantity of words
-    global s
-    global connected
-    chunks = []
-    bytes_recd = 0
-    while bytes_recd < 4 and connected:
-        chunk = s.recv(min(4 - bytes_recd, 2048))
-        if chunk == '':
-            print "Server has disconnected"
-            connected = False
-        chunks.append(chunk)
-        bytes_recd = bytes_recd + len(chunk)
-    if connected:
-        MSGLEN = int(''.join(chunks))
-        #recieve the words
-        chunks = []
-        bytes_recd = 0
-        while bytes_recd < MSGLEN and connected:
-            chunk = s.recv(min(MSGLEN - bytes_recd, 2048))
-            if chunk == '':
-                print "Server has disconnected"
-                connected = False
-            chunks.append(chunk)
-            bytes_recd = bytes_recd + len(chunk)
-        return ''.join(chunks)
+	#Recieve quantity of words
+	global s
+	global connected
+	chunks = []
+	bytes_recd = 0
+	while bytes_recd < 4 and connected:
+		chunk = s.recv(min(4 - bytes_recd, 2048))
+		if chunk == '':
+			print("Server has disconnected")
+			connected = False
+		chunks.append(chunk)
+		bytes_recd = bytes_recd + len(chunk)
+	if connected:
+		MSGLEN = int(''.join(chunks))
+		#recieve the words
+		chunks = []
+		bytes_recd = 0
+		while bytes_recd < MSGLEN and connected:
+			chunk = s.recv(min(MSGLEN - bytes_recd, 2048))
+			if chunk == '':
+				print("Server has disconnected")
+				connected = False
+			chunks.append(chunk)
+			bytes_recd = bytes_recd + len(chunk)
+		return ''.join(chunks)
 
 class multipliers(object):
-    def __init__(self, difficulty, hp, speed, cooldown, meteors, time):
-        self.difficulty = difficulty
-        self.hp = hp #boss hp multiplier
-        self.speed = speed # meteor speed multiplier
-        self.cooldown = cooldown # cooldown for upgrades and boss shots (higher is faster)
-        self.meteors = meteors # cooldown between meteors
-        self.time = time # distance multiplier (affects score and boss spawns)
+	def __init__(self, difficulty, hp, speed, cooldown, meteors, time):
+		self.difficulty = difficulty
+		self.hp = hp #boss hp multiplier
+		self.speed = speed # meteor speed multiplier
+		self.cooldown = cooldown # cooldown for upgrades and boss shots (higher is faster)
+		self.meteors = meteors # cooldown between meteors
+		self.time = time # distance multiplier (affects score and boss spawns)
 
 def getpartimg(name, quant):
 	images = []
@@ -664,7 +663,6 @@ def shoot():
 	global ship
 	global projectiles
 	global timer
-	#print "pew"
 	timer.guncool = ship.gun.cooldown
 	#temp = proj(ship.gun.hp, (ship.coords[0]+(ship.size[0]/2)-(ship.gun.size[0]/2), ship.coords[1]-1), ship.gun.size, ship.gun.speed, ship.gun.move, ship.gun.dmg, ship.gun.pic, ship.gun.id)
 	temp = ship.gun.makeProj(ship.coords)
@@ -712,7 +710,7 @@ def calcEff():
 		
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		s.connect((serverip, serverport))
-		print "Connected"
+		print("Connected")
 		sendinfo(str(mult.difficulty)+" "+str(int(score)))
 		out = myreceive()
 		out = out[:len(out)-1]
@@ -721,9 +719,9 @@ def calcEff():
 	return out, score, efficiency
 		
 		
-print "setup complete."
+print("setup complete.")
 #Version
-print "pewpew version 0.3.1"
+print("pewpew version 0.3.1")
 
 Looping = True
 while Looping:
@@ -779,7 +777,7 @@ while Looping:
 	Screen.fill(Black)
 	Line(Screen, Green, (0,0), (600,600), 3)
 	pygame.display.update()
-	print "updated screen"
+	print("updated screen")
 
 	particles = []
 	projectiles = []
@@ -823,9 +821,9 @@ while Looping:
 	RecentDamage = 0
 	crit = 0
 	buttonPush = 0
-	print "Let the game begin."
+	print("Let the game begin.")
 	#Version
-	print "pewpew version 0.3"
+	print("pewpew version 0.3")
 	localrand = False
 	
 	def killBoss():
@@ -884,7 +882,6 @@ while Looping:
 		timer.meteors -= 1
 		if timer.meteors <= 0:
 			timer.meteors = mult.meteors
-			#print "New meteor"
 			genMeteor(Meteors[random.randint(0,len(Meteors)-1)], (random.randint(0-20, screenX+20), 0-100))
 		if timer.time % 12 == 0 and RecentDamage > 0:
 			RecentDamage -= 1
@@ -1022,7 +1019,6 @@ while Looping:
 							Xover = max(0, min(boss.coords[0]+boss.size[0], BR[0]+120*B)-max(boss.coords[0], BR[0]))
 							Yover = max(0, min(boss.coords[1]+boss.size[1], BR[1]+120*B)-max(boss.coords[1], BR[1]))
 							overlap = Xover * Yover
-							#print overlap
 							RecentDamage += i.crit*B*overlap/100 if boss.hp > overlap/100 else boss.hp*i.crit
 							boss.hp -= B*overlap/100
 							if boss.hp <= 0:
@@ -1153,7 +1149,7 @@ while Looping:
 				#OP
 				if event.key == K_g:
 					OP = True
-					print "Opped."
+					print("Opped.")
 				if OP:
 					if event.key == K_p:
 						pause = True
@@ -1188,10 +1184,10 @@ while Looping:
 						debugon = False
 					else:
 						debugon = True
-					print 'lazer cooldown: ', timer.guncool
-					print 'Next boss: ', bosstime
-					print 'Boss Cooldown: ', timer.bossatk
-					print 'Boss HP: ', boss.hp
+					print ('lazer cooldown: ', timer.guncool)
+					print ('Next boss: ', bosstime)
+					print ('Boss Cooldown: ', timer.bossatk)
+					print ('Boss HP: ', boss.hp)
 			if event.type == pygame.KEYUP:
 				if event.key == K_LEFT:
 					lefting = False
@@ -1214,7 +1210,7 @@ while Looping:
 					powerups.remove(i)
 					misc = random.randint(0, len(upgrades)-1)
 					crit = ship.hp * (mult.difficulty+0.5) + RecentDamage
-					print "       "+str(crit)
+					print ("       "+str(crit))
 					if random.randint(30, 400) <= crit:
 						if crit > 400 and random.randint(400, 1000) < crit:
 							equip(GunGod)
@@ -1323,7 +1319,7 @@ while Looping:
 			else: #blue if only one shot
 				pygame.draw.rect(Screen, (80, 80, 255), (110, screenY-55, 30, 40))
 				#pygame.draw.line(Screen, (80, 80, 255), (screenX, screenY-54), (screenX/2, screenY-54), 2)
- 			
+			
 
 		else:
 			pass
@@ -1333,12 +1329,12 @@ while Looping:
 			pygame.draw.circle(Screen, (255, 255, 255), localrand, 40, 2)
 			pygame.display.update()
 			raw_input("")'''
- 		Screen.blit(Hud, (0, screenY-95))
+		Screen.blit(Hud, (0, screenY-95))
 			
 		pygame.display.update()
 		clock.tick(fps)
 
-	print timer.neardead
+	print(timer.neardead)
 	if mult.difficulty == 0:
 		l1 = "You cleaned up "+str(timer.time)+" meters."
 		l2, l5 = str(metdestroyed) + " meteor units sweeped ", "at "+str(math.floor(efficiency*100))+"% efficiency."
