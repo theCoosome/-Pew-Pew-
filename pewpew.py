@@ -55,12 +55,14 @@ ImgUpgrade = pygame.image.load('imgs/powerup.png')
 DebugMode = False
 RecentDamage = 0
 
+# Prints data only if the game is in debug mode
 def prints(stuff):
 	global DebugMode
 	if DebugMode:
 		print(stuff)
 
-def cuttofour(number):
+# Cuts a number into a list of strings that are 4 digits long
+def cutToFour(number):
 	number = str(number)
 	leng = len(number)
 	if leng > 4:
@@ -72,13 +74,14 @@ def cuttofour(number):
 			number = "0"+number
 	return number
 
-def sendinfo(typewords):
-	global s
+# Sends typewords to the server connected in Socket.
+def sendInfo(typewords):
+	global Socket
 	#send size of packet
-	msg = cuttofour(len(typewords))
+	msg = cutToFour(len(typewords))
 	totalsent = 0
 	while totalsent < 4:
-		sent = s.send(msg[totalsent:])
+		sent = Socket.send(msg[totalsent:])
 		if sent == 0:
 			raise RuntimeError("socket connection broken")
 			break
@@ -86,20 +89,22 @@ def sendinfo(typewords):
 	#send packet
 	totalsent = 0
 	while totalsent < int(msg):
-		sent = s.send(typewords[totalsent:])
+		sent = Socket.send(typewords[totalsent:])
 		if sent == 0:
 			raise RuntimeError("socket connection broken")
 			break
 		totalsent = totalsent + sent
 		
-def myreceive():
+# Recieve data sent from the server.
+# The server should only be sending high score data back.
+def serverRecieve():
 	#Recieve quantity of words
-	global s
+	global Socket
 	global ConnectToServer
 	chunks = []
 	bytes_recd = 0
 	while bytes_recd < 4 and ConnectToServer:
-		chunk = s.recv(min(4 - bytes_recd, 2048))
+		chunk = Socket.recv(min(4 - bytes_recd, 2048))
 		if chunk == '':
 			print("Server has disconnected")
 			ConnectToServer = False
@@ -111,7 +116,7 @@ def myreceive():
 		chunks = []
 		bytes_recd = 0
 		while bytes_recd < MSGLEN and ConnectToServer:
-			chunk = s.recv(min(MSGLEN - bytes_recd, 2048))
+			chunk = Socket.recv(min(MSGLEN - bytes_recd, 2048))
 			if chunk == '':
 				print("Server has disconnected")
 				ConnectToServer = False
@@ -119,6 +124,7 @@ def myreceive():
 			bytes_recd = bytes_recd + len(chunk)
 		return ''.join(chunks)
 
+# Stores multipliers that change based on difficulty or other changing factors.
 class multipliers(object):
 	def __init__(self, difficulty, hp, speed, cooldown, meteors, time):
 		self.difficulty = difficulty
@@ -128,16 +134,17 @@ class multipliers(object):
 		self.meteors = meteors # cooldown between meteors
 		self.time = time # distance multiplier (affects score and boss spawns)
 
-def getpartimg(name, quant):
+# Returns a list of quant images from the animation folder with the given name.
+def getImgset(name, quant):
 	images = []
 	for i in range(quant):
 		images.append(pygame.image.load('anim/{}/{}.png'.format(name, i)))
 	return images
 	
-ImgsetExplosion = getpartimg("explosion", 5)
-ImgsetCrumble = getpartimg("destintegrate", 4)
-ImgsetFlareup = getpartimg("firebit", 11)
-ImgsetSparks = getpartimg("spark", 5)
+ImgsetExplosion = getImgset("explosion", 5)
+ImgsetCrumble = getImgset("destintegrate", 4)
+ImgsetFlareup = getImgset("firebit", 11)
+ImgsetSparks = getImgset("spark", 5)
 
 #build the hud
 ColorBack = (40, 40, 40)
@@ -153,10 +160,12 @@ for i in range(0, 30):
 pygame.draw.rect(Hud, ClrAccent, (101, 42, 8, 53))
 pygame.draw.rect(Hud, ClrAccent, (141, 42, 8, 53))
 
+# Returns the coordinates of the center of an object that has coords and size attributes.
 def center(obj):
 	return (obj.coords[0]+(obj.size[0]/2), obj.coords[1]+(obj.size[1]/2))
 
 TicksToFrame = 5
+# Basic object for particle system.
 class particle(object): #speed is tuple of x and y speed
 	def __init__(self, coords, size, move, pics):
 		self.frame = len(pics)-1
@@ -169,6 +178,7 @@ class particle(object): #speed is tuple of x and y speed
 			
 #note to future: probably can make faster by directly referencing to the gun's base object
 #and grabbing it's stats. May also need to reference the modifiers if they apply
+# Base class for projectiles created by the player.
 class proj(object):
 	def __init__(self, hp, coords, size, speed, move):
 		self.hp = hp
@@ -183,6 +193,7 @@ class proj(object):
 		self.crit = 0
 		self.counts = True
 
+	# Created to reduce arguments in default constructor. Must be called.
 	def complete(self, damage, pic, id, crit, counts):
 		self.dmg = damage
 		self.pic = pic
@@ -190,7 +201,7 @@ class proj(object):
 		self.crit = crit
 		self.counts = counts
 
-
+# Base class for guns the player can equip.
 class gun(object):
 	def __init__(self, id, hpmod, hp, fires, size, speed, move, damage, cooldown, pic):
 		self.hp = hp
@@ -207,12 +218,16 @@ class gun(object):
 		self.ban = False # if this weapon is not supported
 		self.crit = 1
 		self.screenCount = True #if this weapon counts against bullet efficiency
+
+	# Sets extra data that is consistent for most guns. Created to reduce constructor length.
 	def setBonus(self, ban, crit = 1, counts = True):
 		self.ban = ban
 		self.crit = crit
 		self.screenCount = counts;
-	def makeProj(self, shipCoords):
 
+	# Returns a new projectile object corresponding to the gun.
+	def makeProj(self, shipCoords):
+		global PlayerShip
 		temp = proj(self.hp, (PlayerShip.coords[0]+(PlayerShip.size[0]/2)-(PlayerShip.gun.size[0]/2), PlayerShip.coords[1]-1), self.size, self.speed, self.move)
 		temp.complete(self.dmg, self.pic, self.id, self.crit, self.screenCount)
 		return temp
@@ -252,6 +267,7 @@ GunReducer.setBonus(True, 1, False) #not confirmed safe
 Upgrades = [GunRail, GunLazer, GunDrill, GunShielding, GunGatling, GunWall, GunBomb]
 Upgrades2 = [GunRail2, GunLazer2, GunDrill2, GunShielding2, GunGatling2, GunDefender, GunBomb2, GunReducer]
 			
+# Base class for powerups the player picks up.
 class powerup(object):
 	def __init__(self, coords, interval):
 		self.coords = coords
@@ -261,6 +277,7 @@ class powerup(object):
 		global ImgUpgrade
 		self.pic = ImgUpgrade
 
+# Base class for the player ship.
 class ships(object):
 	def __init__(self, hp, coords, size, speed):
 		self.hp = hp
@@ -273,6 +290,7 @@ class ships(object):
 		self.move = 0
 		self.gun = 0
 		
+# Base class for boss enemies.
 class boss(object):
 	def __init__(self, id, hp, dmg, size, speed, atkint, pic):
 		self.id = id
@@ -286,6 +304,7 @@ class boss(object):
 		self.pic = pic
 		self.on = 0
 		
+# Base class for single meteors.
 class meteor(object):
 	def __init__(self, hp, coords, speed):
 		self.hp = hp
@@ -296,6 +315,7 @@ class meteor(object):
 		self.timer = random.randint(0, 300-((hp-3)*30))
 		self.timerBase = 300-((hp-3)*30)
 		
+# Base class to contain global timers and counters.
 class timers(object):
 	def __init__(self):
 		self.guncool = -30
@@ -309,6 +329,7 @@ class timers(object):
 		self.neardead = 0.0
 		
 #object one coord pair, size, object two coord pair and size
+# Returns true if rectangles with corner/size pairs (p1,p2) (p3,p4) overlap.
 def collide(p1, p2, p3, p4):
 	#if right side is right of left side, and left side left of right side
 	if p1[1] + p2[1] > p3[1] and p1[1] < p3[1] + p4[1]:
@@ -316,6 +337,7 @@ def collide(p1, p2, p3, p4):
 		if p1[0] + p2[0] > p3[0] and p1[0] < p3[0] + p4[0]:
 			return True
 
+# The set of all meteor clusters that can be encountered.
 AllMeteors = [[
 	[2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
 	
@@ -647,8 +669,10 @@ AllMeteors = [[
 		
 		[1, [1]]
 	]]
-#-
+
+# Appends meteors to the global list to create the given thisMet cluster.
 def genMeteor(thisMet, mod):
+	global Meteors
 	speed = thisMet[0]
 	for h in range(len(thisMet)):
 		if h != 0:
@@ -658,6 +682,7 @@ def genMeteor(thisMet, mod):
 					boolet = meteor(temp, (w*10+mod[0], h*10+mod[1]), speed)#--------------------------------------------------------------------------make time mod
 					Meteors.append(boolet)
 		
+# Fires the player's currently equipped gun.
 def shoot():
 	global PlayerShip
 	global Projectiles
@@ -671,13 +696,15 @@ def shoot():
 		global GunBase
 		equip(GunBase)
 
+# Sets the players equipped gun to the specified weapon.
 def equip(weapon):
 	global PlayerShip
 	weapon.fires = 0
 	PlayerShip.gun = weapon
 	PlayerShip.hp += weapon.hpmod
 	
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Calculates the players score and interacts with the server.
 def calcEff():
 	global ShotCount
 	global HitEfficiency
@@ -685,7 +712,7 @@ def calcEff():
 	global Multiplier
 	global MeteorsDestroyed
 	global Timer
-	global s
+	global Socket
 	global Psych
 	try:
 		efficiency = float(ShotCount - HitEfficiency)/float(ShotCount)
@@ -706,14 +733,14 @@ def calcEff():
 		out = "You were opped. High scores not counted."
 	else:
 		
-		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		s.connect((ServerIP, ServerPort))
+		Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		Socket.connect((ServerIP, ServerPort))
 		print("Connected")
-		sendinfo(str(Multiplier.difficulty)+" "+str(int(score)))
-		out = myreceive()
+		sendInfo(str(Multiplier.difficulty)+" "+str(int(score)))
+		out = serverRecieve()
 		out = out[:len(out)-1]
-		#s.shutdown(SHUT_RDWR)
-		s.close()
+		#Socket.shutdown(SHUT_RDWR)
+		Socket.close()
 	return out, score, efficiency
 		
 		
@@ -820,6 +847,7 @@ while Looping:
 	#Version
 	print("pewpew version 0.3")
 	
+	# Creates particles, resets variables, and sets up the next boss encounter
 	def killBoss():
 		global Fps
 		global Multiplier
