@@ -9,14 +9,18 @@ from decimal import *
 from pygame.locals import *
 getcontext().prec = 2
 pygame.init()
-#colors
+
+OP = True
+DebugMode = False
+RecentDamage = 0
 Psych = False
+
 ConnectToServer, ServerIP, ServerPort = True, "174.25.72.161", 7778
+Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 ClrGreen = pygame.Color(0,255,0)
 ClrBlack = pygame.Color(0,0,0)
 ClrWhite = pygame.Color(255,255,255)
-#usefull
 ScreenX, ScreenY = 250, 650
 Screen = pygame.display.set_mode((ScreenX, ScreenY))
 Line = pygame.draw.line
@@ -25,129 +29,8 @@ Clock = pygame.time.Clock()
 FontSmall = pygame.font.SysFont('Calibri', 15)
 FontLarge = pygame.font.SysFont('Calibri', 30)
 pygame.display.set_caption("Pew Pew")
-OP = True
-#things
-
-Wall1 = pygame.image.load('imgs/pewpew_wall1.png')
-Wall2 = pygame.image.load('imgs/pewpew_wall2.png')
-Wall3 = pygame.image.load('imgs/pewpew_wall3.png')
-Wall4 = pygame.image.load('imgs/pewpew_enm_1.png')
-Wall5 = pygame.image.load('imgs/pewpew_enm2.png')
-Wall6 = pygame.image.load('imgs/pewpew_enm3.png')
-ImgProjDefault = pygame.image.load('imgs/boolet.png')
-ImgBoss = pygame.image.load('imgs/pewpew_enmBoss.png')
-ImgProjDrill = pygame.image.load('imgs/gundrill.png')
-ImgProjRailgun = pygame.image.load('imgs/gunrail.png')
-ImgProjShield = pygame.image.load('imgs/gunshield.png')
-ImgProjLazer = pygame.image.load('imgs/gunlazer.png')
-ImgProjHyper = pygame.image.load('imgs/charged.png')
-ImgProjExcavator = pygame.image.load('imgs/excavator.png')
-ImgProjShield2 = pygame.image.load('imgs/hypershield.png')
-ImgProjLight = pygame.image.load('imgs/light.png')
-ImgProjBomb = pygame.image.load('imgs/bomb.png')
-ImgBackground = pygame.image.load('imgs/pewpew_backdrop.png')
-ImgPowerup = pygame.image.load('imgs/powerup.png')
-ImgPlayer = pygame.image.load('imgs/pewpewship.png')
-ImgPlayerDamaged = pygame.image.load('imgs/damagepew.png')
-ImgUpgrade = pygame.image.load('imgs/powerup.png')
-
-#other
-DebugMode = False
-RecentDamage = 0
-
-# Prints data only if the game is in debug mode
-def prints(stuff):
-	global DebugMode
-	if DebugMode:
-		print(stuff)
-
-# Cuts a number into a list of strings that are 4 digits long
-def cutToFour(number):
-	number = str(number)
-	leng = len(number)
-	if leng > 4:
-		print("Packet too long. Cutting " + str(int(number)-int(number[:4])) + " digits")
-		number = number[:4]
-	if leng < 4:
-		rand = 4-leng
-		for i in range(rand):
-			number = "0"+number
-	return number
-
-# Sends typewords to the server connected in Socket.
-def sendInfo(typewords):
-	global Socket
-	#send size of packet
-	msg = cutToFour(len(typewords))
-	totalsent = 0
-	while totalsent < 4:
-		sent = Socket.send(msg[totalsent:])
-		if sent == 0:
-			raise RuntimeError("socket connection broken")
-			break
-		totalsent = totalsent + sent
-	#send packet
-	totalsent = 0
-	while totalsent < int(msg):
-		sent = Socket.send(typewords[totalsent:])
-		if sent == 0:
-			raise RuntimeError("socket connection broken")
-			break
-		totalsent = totalsent + sent
-		
-# Recieve data sent from the server.
-# The server should only be sending high score data back.
-def serverRecieve():
-	#Recieve quantity of words
-	global Socket
-	global ConnectToServer
-	chunks = []
-	bytes_recd = 0
-	while bytes_recd < 4 and ConnectToServer:
-		chunk = Socket.recv(min(4 - bytes_recd, 2048))
-		if chunk == '':
-			print("Server has disconnected")
-			ConnectToServer = False
-		chunks.append(chunk)
-		bytes_recd = bytes_recd + len(chunk)
-	if ConnectToServer:
-		MSGLEN = int(''.join(chunks))
-		#recieve the words
-		chunks = []
-		bytes_recd = 0
-		while bytes_recd < MSGLEN and ConnectToServer:
-			chunk = Socket.recv(min(MSGLEN - bytes_recd, 2048))
-			if chunk == '':
-				print("Server has disconnected")
-				ConnectToServer = False
-			chunks.append(chunk)
-			bytes_recd = bytes_recd + len(chunk)
-		return ''.join(chunks)
-
-# Stores multipliers that change based on difficulty or other changing factors.
-class multipliers(object):
-	def __init__(self, difficulty, hp, speed, cooldown, meteors, time):
-		self.difficulty = difficulty
-		self.hp = hp #boss hp multiplier
-		self.speed = speed # meteor speed multiplier
-		self.cooldown = cooldown # cooldown for upgrades and boss shots (higher is faster)
-		self.meteors = meteors # cooldown between meteors
-		self.time = time # distance multiplier (affects score and boss spawns)
-
-# Returns a list of quant images from the animation folder with the given name.
-def getImgset(name, quant):
-	images = []
-	for i in range(quant):
-		images.append(pygame.image.load('anim/{}/{}.png'.format(name, i)))
-	return images
-	
-ImgsetExplosion = getImgset("explosion", 5)
-ImgsetCrumble = getImgset("destintegrate", 4)
-ImgsetFlareup = getImgset("firebit", 11)
-ImgsetSparks = getImgset("spark", 5)
 
 #build the hud
-ColorBack = (40, 40, 40)
 ClrAccent = (50, 50, 50)
 Hud = pygame.Surface((ScreenX, 95), pygame.SRCALPHA, 32).convert_alpha()
 pygame.draw.rect(Hud, (100, 100, 100), (0, 0, ScreenX, 5))
@@ -160,182 +43,15 @@ for i in range(0, 30):
 pygame.draw.rect(Hud, ClrAccent, (101, 42, 8, 53))
 pygame.draw.rect(Hud, ClrAccent, (141, 42, 8, 53))
 
-# Returns the coordinates of the center of an object that has coords and size attributes.
-def center(obj):
-	return (obj.coords[0]+(obj.size[0]/2), obj.coords[1]+(obj.size[1]/2))
-
+# Global variables that are currently undefined
+Particles = []
+Projectiles = []
+Powerups = []
+Meteors = []
+PlayerShip = None
+Boss = None
 TicksToFrame = 5
-# Basic object for particle system.
-class particle(object): #speed is tuple of x and y speed
-	def __init__(self, coords, size, move, pics):
-		self.frame = len(pics)-1
-		self.coords = [coords[0]-(size[0]/2), coords[1]-(size[1]/2)]
-		self.size = size
-		self.move = move
-		self.pics = pics
-		global TicksToFrame
-		self.timer = TicksToFrame
-			
-#note to future: probably can make faster by directly referencing to the gun's base object
-#and grabbing it's stats. May also need to reference the modifiers if they apply
-# Base class for projectiles created by the player.
-class proj(object):
-	def __init__(self, hp, coords, size, speed, move):
-		self.hp = hp
-		self.basehp = hp
-		self.coords = coords
-		self.size = size
-		self.speed = speed
-		self.move = move
-		self.dmg = 0
-		self.pic = None
-		self.id = None
-		self.crit = 0
-		self.counts = True
-
-	# Created to reduce arguments in default constructor. Must be called.
-	def complete(self, damage, pic, id, crit, counts):
-		self.dmg = damage
-		self.pic = pic
-		self.id = id
-		self.crit = crit
-		self.counts = counts
-
-# Base class for guns the player can equip.
-class gun(object):
-	def __init__(self, id, hpmod, hp, fires, size, speed, move, damage, cooldown, pic):
-		self.hp = hp
-		self.hpmod = hpmod
-		self.fires = 0
-		self.maxfires = fires-1
-		self.size = size
-		self.speed = speed #times to loop
-		self.move = move #ammount to move each loop
-		self.dmg = damage
-		self.id = id
-		self.cooldown = cooldown
-		self.pic = pic
-		self.ban = False # if this weapon is not supported
-		self.crit = 1
-		self.screenCount = True #if this weapon counts against bullet efficiency
-
-	# Sets extra data that is consistent for most guns. Created to reduce constructor length.
-	def setBonus(self, ban, crit = 1, counts = True):
-		self.ban = ban
-		self.crit = crit
-		self.screenCount = counts;
-
-	# Returns a new projectile object corresponding to the gun.
-	def makeProj(self, shipCoords):
-		global PlayerShip
-		temp = proj(self.hp, (PlayerShip.coords[0]+(PlayerShip.size[0]/2)-(PlayerShip.gun.size[0]/2), PlayerShip.coords[1]-1), self.size, self.speed, self.move)
-		temp.complete(self.dmg, self.pic, self.id, self.crit, self.screenCount)
-		return temp
-
-GunBase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, ImgProjDefault)
-GunRail = gun("Railgun", 1, 2, 10, (2, 10), 10, 10, 25, 28, ImgProjRailgun)
-GunRail2 = gun("Scientific", -2, 2000, 2, (30, 30), 50, 10, 30, 60, ImgProjHyper)
-GunRail2.setBonus(True, 1, False) #destructive to ship
-#gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, ImgProjLazer) #Time dialator
-GunLazer = gun("Laser Beam", 0, 1, 220, (2, 10), 50, 10, 0.5, -1, ImgProjLight)
-GunLazer2 = gun("Decimator", -1, 1, 220, (4, 10), 50, 10, 1, -1, ImgProjLight)
-GunLazer3 = gun("Ender", -50, 200, 300, (20, 500), 1, 500, 1, -1, ImgProjHyper)
-GunLazer3.setBonus(True, 0.25, False) #don't fall to ender spam and -1000 hp
-GunBomb = gun("Bomb Launcher", 2, 4, 6, (4, 4), 2, 1, 1, 30, ImgProjBomb)
-GunBomb.setBonus(True, 0.8)
-GunBomb2 = gun("Nuclear Charge", 2, 4, 1, (4, 4), 1, 2, 1, 30, ImgProjBomb)
-GunBomb2.setBonus(False, 0.8)
-
-GunDrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, ImgProjDrill)
-GunDrill2 = gun("Excavator", 3, 200, 1, (30, 30), 1, 1, 1, 40, ImgProjExcavator)
-GunDrill2.setBonus(False, 1, False)
-GunShielding = gun("Shield Thrower", 10, 20, 1, (20, 5), 1, 1, 1, 50, ImgProjShield)
-GunShielding2 = gun("Shielding", 20, 10, 1, (20, 5), 1, 1, 1, 50, ImgProjShield)
-GunGatling = gun("Tommy Gun", 2, 1, 80, (2, 2), 4, 3, 2, 15, ImgProjDefault)
-GunGatling.setBonus(True, 6) #bootleg
-GunGatling2 = gun("Gatling", 2, 1, 200, (2, 4), 3, 5, 2, 10, ImgProjDefault)
-GunGatling2.setBonus(False, 8)
-GunOP = gun("God gun", 50, 100, 1000, (50, 5), 6, 2, 30, 0, ImgProjShield2)
-GunWall = gun("Wall Placer", 1, 56, 1, (50, 20), 1, 5, 1, 50, ImgProjShield2)
-GunWall.setBonus(False, 0.5) #lessen passive crit gen (health op much)
-GunDefender = gun("Defender", 2, 20, 1, (20, 10), 1, 3, 1, 50, ImgProjShield)
-#GunWall.setBonus(False, 0.5)
-
-GunReducer = gun("Reducer", 1, 10000, 1, (ScreenX*2, ScreenY), 1, ScreenY, 1, 1, ImgBackground)
-GunReducer.setBonus(True, 1, False) #not confirmed safe
-
-Upgrades = [GunRail, GunLazer, GunDrill, GunShielding, GunGatling, GunWall, GunBomb]
-Upgrades2 = [GunRail2, GunLazer2, GunDrill2, GunShielding2, GunGatling2, GunDefender, GunBomb2, GunReducer]
-			
-# Base class for powerups the player picks up.
-class powerup(object):
-	def __init__(self, coords, interval):
-		self.coords = coords
-		self.size = (15, 15)
-		self.interval = interval
-		self.speed = interval
-		global ImgUpgrade
-		self.pic = ImgUpgrade
-
-# Base class for the player ship.
-class ships(object):
-	def __init__(self, hp, coords, size, speed):
-		self.hp = hp
-		self.basehp = hp
-		self.coords = coords
-		self.size = size
-		self.speed = speed
-		self.dmg = 1
-		self.mom = 0
-		self.move = 0
-		self.gun = 0
-		
-# Base class for boss enemies.
-class boss(object):
-	def __init__(self, id, hp, dmg, size, speed, atkint, pic):
-		self.id = id
-		self.hp = hp
-		self.dmg = dmg
-		self.basehp = hp
-		self.coords = ((ScreenX/2)-(size[0]/2), -size[1])
-		self.size = size
-		self.atkint = atkint
-		self.speed = speed
-		self.pic = pic
-		self.on = 0
-		
-# Base class for single meteors.
-class meteor(object):
-	def __init__(self, hp, coords, speed):
-		self.hp = hp
-		self.coords = coords
-		self.size = (10, 10)
-		self.speed = speed
-		self.dmg = 1
-		self.timer = random.randint(0, 300-((hp-3)*30))
-		self.timerBase = 300-((hp-3)*30)
-		
-# Base class to contain global timers and counters.
-class timers(object):
-	def __init__(self):
-		self.guncool = -30
-		self.meteors = 5
-		self.time = 0
-		self.move = 1
-		self.movecheck = 0
-		self.backdrop = 100
-		self.bossatk = 300
-		self.powerup = 400
-		self.neardead = 0.0
-		
-#object one coord pair, size, object two coord pair and size
-# Returns true if rectangles with corner/size pairs (p1,p2) (p3,p4) overlap.
-def collide(p1, p2, p3, p4):
-	#if right side is right of left side, and left side left of right side
-	if p1[1] + p2[1] > p3[1] and p1[1] < p3[1] + p4[1]:
-		#if bottom is below top and top is above bottom
-		if p1[0] + p2[0] > p3[0] and p1[0] < p3[0] + p4[0]:
-			return True
+BossesBeat = 0
 
 # The set of all meteor clusters that can be encountered.
 AllMeteors = [[
@@ -670,17 +386,236 @@ AllMeteors = [[
 		[1, [1]]
 	]]
 
-# Appends meteors to the global list to create the given thisMet cluster.
-def genMeteor(thisMet, mod):
-	global Meteors
-	speed = thisMet[0]
-	for h in range(len(thisMet)):
-		if h != 0:
-			for w in range(len(thisMet[h])):
-				temp = thisMet[h][w]
-				if temp != 0:
-					boolet = meteor(temp, (w*10+mod[0], h*10+mod[1]), speed)#--------------------------------------------------------------------------make time mod
-					Meteors.append(boolet)
+# Image loading
+Wall1 = pygame.image.load('imgs/pewpew_wall1.png')
+Wall2 = pygame.image.load('imgs/pewpew_wall2.png')
+Wall3 = pygame.image.load('imgs/pewpew_wall3.png')
+Wall4 = pygame.image.load('imgs/pewpew_enm_1.png')
+Wall5 = pygame.image.load('imgs/pewpew_enm2.png')
+Wall6 = pygame.image.load('imgs/pewpew_enm3.png')
+ImgProjDefault = pygame.image.load('imgs/boolet.png')
+ImgBoss = pygame.image.load('imgs/pewpew_enmBoss.png')
+ImgProjDrill = pygame.image.load('imgs/gundrill.png')
+ImgProjRailgun = pygame.image.load('imgs/gunrail.png')
+ImgProjShield = pygame.image.load('imgs/gunshield.png')
+ImgProjLazer = pygame.image.load('imgs/gunlazer.png')
+ImgProjHyper = pygame.image.load('imgs/charged.png')
+ImgProjExcavator = pygame.image.load('imgs/excavator.png')
+ImgProjShield2 = pygame.image.load('imgs/hypershield.png')
+ImgProjLight = pygame.image.load('imgs/light.png')
+ImgProjBomb = pygame.image.load('imgs/bomb.png')
+ImgBackground = pygame.image.load('imgs/pewpew_backdrop.png')
+ImgPowerup = pygame.image.load('imgs/powerup.png')
+ImgPlayer = pygame.image.load('imgs/pewpewship.png')
+ImgPlayerDamaged = pygame.image.load('imgs/damagepew.png')
+ImgUpgrade = pygame.image.load('imgs/powerup.png')
+
+# Returns a list of quant images from the animation folder with the given name.
+def getImgset(name, quant):
+	images = []
+	for i in range(quant):
+		images.append(pygame.image.load('anim/{}/{}.png'.format(name, i)))
+	return images
+	
+ImgsetExplosion = getImgset("explosion", 5)
+ImgsetCrumble = getImgset("destintegrate", 4)
+ImgsetFlareup = getImgset("firebit", 11)
+ImgsetSparks = getImgset("spark", 5)
+
+# Prints data only if the game is in debug mode
+def prints(stuff):
+	global DebugMode
+	if DebugMode:
+		print(stuff)
+					
+# Returns the coordinates of the center of an object that has coords and size attributes.
+def center(obj):
+	return (obj.coords[0]+(obj.size[0]/2), obj.coords[1]+(obj.size[1]/2))
+
+#object one coord pair, size, object two coord pair and size
+# Returns true if rectangles with corner/size pairs (p1,p2) (p3,p4) overlap.
+def collide(p1, p2, p3, p4):
+	#if right side is right of left side, and left side left of right side
+	if p1[1] + p2[1] > p3[1] and p1[1] < p3[1] + p4[1]:
+		#if bottom is below top and top is above bottom
+		if p1[0] + p2[0] > p3[0] and p1[0] < p3[0] + p4[0]:
+			return True
+
+# CLASSES
+
+# Stores multipliers that change based on difficulty or other changing factors.
+class multipliers(object):
+	def __init__(self, difficulty, hp, speed, cooldown, meteors, time):
+		self.difficulty = difficulty
+		self.hp = hp #boss hp multiplier
+		self.speed = speed # meteor speed multiplier
+		self.cooldown = cooldown # cooldown for upgrades and boss shots (higher is faster)
+		self.meteors = meteors # cooldown between meteors
+		self.time = time # distance multiplier (affects score and boss spawns)
+
+# Basic object for particle system.
+class particle(object): #speed is tuple of x and y speed
+	def __init__(self, coords, size, move, pics):
+		self.frame = len(pics)-1
+		self.coords = [coords[0]-(size[0]/2), coords[1]-(size[1]/2)]
+		self.size = size
+		self.move = move
+		self.pics = pics
+		global TicksToFrame
+		self.timer = TicksToFrame
+			
+#note to future: probably can make faster by directly referencing to the gun's base object
+#and grabbing it's stats. May also need to reference the modifiers if they apply
+# Base class for projectiles created by the player.
+class proj(object):
+	def __init__(self, hp, coords, size, speed, move):
+		self.hp = hp
+		self.basehp = hp
+		self.coords = coords
+		self.size = size
+		self.speed = speed
+		self.move = move
+		self.dmg = 0
+		self.pic = None
+		self.id = None
+		self.crit = 0
+		self.counts = True
+
+	# Created to reduce arguments in default constructor. Must be called.
+	def complete(self, damage, pic, id, crit, counts):
+		self.dmg = damage
+		self.pic = pic
+		self.id = id
+		self.crit = crit
+		self.counts = counts
+
+# Base class for guns the player can equip.
+class gun(object):
+	def __init__(self, id, hpmod, hp, fires, size, speed, move, damage, cooldown, pic):
+		self.hp = hp
+		self.hpmod = hpmod
+		self.fires = 0
+		self.maxfires = fires-1
+		self.size = size
+		self.speed = speed #times to loop
+		self.move = move #ammount to move each loop
+		self.dmg = damage
+		self.id = id
+		self.cooldown = cooldown
+		self.pic = pic
+		self.ban = False # if this weapon is not supported
+		self.crit = 1
+		self.screenCount = True #if this weapon counts against bullet efficiency
+
+	# Sets extra data that is consistent for most guns. Created to reduce constructor length.
+	def setBonus(self, ban, crit = 1, counts = True):
+		self.ban = ban
+		self.crit = crit
+		self.screenCount = counts;
+
+	# Returns a new projectile object corresponding to the gun.
+	def makeProj(self, shipCoords):
+		global PlayerShip
+		temp = proj(self.hp, (PlayerShip.coords[0]+(PlayerShip.size[0]/2)-(PlayerShip.gun.size[0]/2), PlayerShip.coords[1]-1), self.size, self.speed, self.move)
+		temp.complete(self.dmg, self.pic, self.id, self.crit, self.screenCount)
+		return temp
+		
+# Base class for powerups the player picks up.
+class powerup(object):
+	def __init__(self, coords, interval):
+		self.coords = coords
+		self.size = (15, 15)
+		self.interval = interval
+		self.speed = interval
+		global ImgUpgrade
+		self.pic = ImgUpgrade
+
+# Base class for the player ship.
+class ships(object):
+	def __init__(self, hp, coords, size, speed):
+		self.hp = hp
+		self.basehp = hp
+		self.coords = coords
+		self.size = size
+		self.speed = speed
+		self.dmg = 1
+		self.mom = 0
+		self.move = 0
+		self.gun = 0
+		
+# Base class for boss enemies.
+class boss(object):
+	def __init__(self, id, hp, dmg, size, speed, atkint, pic):
+		self.id = id
+		self.hp = hp
+		self.dmg = dmg
+		self.basehp = hp
+		self.coords = ((ScreenX/2)-(size[0]/2), -size[1])
+		self.size = size
+		self.atkint = atkint
+		self.speed = speed
+		self.pic = pic
+		self.on = 0
+		
+# Base class for single meteors.
+class meteor(object):
+	def __init__(self, hp, coords, speed):
+		self.hp = hp
+		self.coords = coords
+		self.size = (10, 10)
+		self.speed = speed
+		self.dmg = 1
+		self.timer = random.randint(0, 300-((hp-3)*30))
+		self.timerBase = 300-((hp-3)*30)
+		
+# Base class to contain global timers and counters.
+class timers(object):
+	def __init__(self):
+		self.guncool = -30
+		self.meteors = 5
+		self.time = 0
+		self.move = 1
+		self.movecheck = 0
+		self.backdrop = 100
+		self.bossatk = 300
+		self.powerup = 400
+		self.neardead = 0.0
+
+GunBase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, ImgProjDefault)
+GunRail = gun("Railgun", 1, 2, 10, (2, 10), 10, 10, 25, 28, ImgProjRailgun)
+GunRail2 = gun("Scientific", -2, 2000, 2, (30, 30), 50, 10, 30, 60, ImgProjHyper)
+GunRail2.setBonus(True, 1, False) #destructive to ship
+#gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, ImgProjLazer) #Time dialator
+GunLazer = gun("Laser Beam", 0, 1, 220, (2, 10), 50, 10, 0.5, -1, ImgProjLight)
+GunLazer2 = gun("Decimator", -1, 1, 220, (4, 10), 50, 10, 1, -1, ImgProjLight)
+GunLazer3 = gun("Ender", -50, 200, 300, (20, 500), 1, 500, 1, -1, ImgProjHyper)
+GunLazer3.setBonus(True, 0.25, False) #don't fall to ender spam and -1000 hp
+GunBomb = gun("Bomb Launcher", 2, 4, 6, (4, 4), 2, 1, 1, 30, ImgProjBomb)
+GunBomb.setBonus(True, 0.8)
+GunBomb2 = gun("Nuclear Charge", 2, 4, 1, (4, 4), 1, 2, 1, 30, ImgProjBomb)
+GunBomb2.setBonus(False, 0.8)
+
+GunDrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, ImgProjDrill)
+GunDrill2 = gun("Excavator", 3, 200, 1, (30, 30), 1, 1, 1, 40, ImgProjExcavator)
+GunDrill2.setBonus(False, 1, False)
+GunShielding = gun("Shield Thrower", 10, 20, 1, (20, 5), 1, 1, 1, 50, ImgProjShield)
+GunShielding2 = gun("Shielding", 20, 10, 1, (20, 5), 1, 1, 1, 50, ImgProjShield)
+GunGatling = gun("Tommy Gun", 2, 1, 80, (2, 2), 4, 3, 2, 15, ImgProjDefault)
+GunGatling.setBonus(True, 6) #bootleg
+GunGatling2 = gun("Gatling", 2, 1, 200, (2, 4), 3, 5, 2, 10, ImgProjDefault)
+GunGatling2.setBonus(False, 8)
+GunOP = gun("God gun", 50, 100, 1000, (50, 5), 6, 2, 30, 0, ImgProjShield2)
+GunWall = gun("Wall Placer", 1, 56, 1, (50, 20), 1, 5, 1, 50, ImgProjShield2)
+GunWall.setBonus(False, 0.5) #lessen passive crit gen (health op much)
+GunDefender = gun("Defender", 2, 20, 1, (20, 10), 1, 3, 1, 50, ImgProjShield)
+
+GunReducer = gun("Reducer", 1, 10000, 1, (ScreenX*2, ScreenY), 1, ScreenY, 1, 1, ImgBackground)
+GunReducer.setBonus(True, 1, False) #not confirmed safe
+
+Upgrades = [GunRail, GunLazer, GunDrill, GunShielding, GunGatling, GunWall, GunBomb]
+Upgrades2 = [GunRail2, GunLazer2, GunDrill2, GunShielding2, GunGatling2, GunDefender, GunBomb2, GunReducer]
+
+
 		
 # Fires the player's currently equipped gun.
 def shoot():
@@ -702,8 +637,82 @@ def equip(weapon):
 	weapon.fires = 0
 	PlayerShip.gun = weapon
 	PlayerShip.hp += weapon.hpmod
+
+# Appends meteors to the global list to create the given thisMet cluster.
+def genMeteor(thisMet, mod):
+	global Meteors
+	speed = thisMet[0]
+	for h in range(len(thisMet)):
+		if h != 0:
+			for w in range(len(thisMet[h])):
+				temp = thisMet[h][w]
+				if temp != 0:
+					boolet = meteor(temp, (w*10+mod[0], h*10+mod[1]), speed)#--------------------------------------------------------------------------make time mod
+					Meteors.append(boolet)
 	
-Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Cuts a number into a list of strings that are 4 digits long
+def cutToFour(number):
+	number = str(number)
+	leng = len(number)
+	if leng > 4:
+		print("Packet too long. Cutting " + str(int(number)-int(number[:4])) + " digits")
+		number = number[:4]
+	if leng < 4:
+		rand = 4-leng
+		for i in range(rand):
+			number = "0"+number
+	return number
+
+# Sends typewords to the server connected in Socket.
+def sendInfo(typewords):
+	global Socket
+	#send size of packet
+	msg = cutToFour(len(typewords))
+	totalsent = 0
+	while totalsent < 4:
+		sent = Socket.send(msg[totalsent:])
+		if sent == 0:
+			raise RuntimeError("socket connection broken")
+			break
+		totalsent = totalsent + sent
+	#send packet
+	totalsent = 0
+	while totalsent < int(msg):
+		sent = Socket.send(typewords[totalsent:])
+		if sent == 0:
+			raise RuntimeError("socket connection broken")
+			break
+		totalsent = totalsent + sent
+		
+# Recieve data sent from the server.
+# The server should only be sending high score data back.
+def serverRecieve():
+	#Recieve quantity of words
+	global Socket
+	global ConnectToServer
+	chunks = []
+	bytes_recd = 0
+	while bytes_recd < 4 and ConnectToServer:
+		chunk = Socket.recv(min(4 - bytes_recd, 2048))
+		if chunk == '':
+			print("Server has disconnected")
+			ConnectToServer = False
+		chunks.append(chunk)
+		bytes_recd = bytes_recd + len(chunk)
+	if ConnectToServer:
+		MSGLEN = int(''.join(chunks))
+		#recieve the words
+		chunks = []
+		bytes_recd = 0
+		while bytes_recd < MSGLEN and ConnectToServer:
+			chunk = Socket.recv(min(MSGLEN - bytes_recd, 2048))
+			if chunk == '':
+				print("Server has disconnected")
+				ConnectToServer = False
+			chunks.append(chunk)
+			bytes_recd = bytes_recd + len(chunk)
+		return ''.join(chunks)
+
 # Calculates the players score and interacts with the server.
 def calcEff():
 	global ShotCount
@@ -739,11 +748,10 @@ def calcEff():
 		sendInfo(str(Multiplier.difficulty)+" "+str(int(score)))
 		out = serverRecieve()
 		out = out[:len(out)-1]
-		#Socket.shutdown(SHUT_RDWR)
 		Socket.close()
 	return out, score, efficiency
-		
-		
+
+
 print("setup complete.")
 #Version
 print("pewpew version 0.3.1")
@@ -820,7 +828,6 @@ while Looping:
 		Meteors.append(boolet)
 	Timer = timers()
 	MeteorsSubset = AllMeteors[Multiplier.difficulty]
-	
 
 	if Multiplier.difficulty == 2:
 		equip(GunShielding2)
@@ -830,8 +837,6 @@ while Looping:
 		equip(GunBase)
 	
 	BossMoveTime = 100
-	#eventTimer = 10000
-	#walls = 0
 	BossSpawnTime = 10000
 	MeteorsDestroyed = 0
 	MovePress = False
@@ -875,8 +880,6 @@ while Looping:
 		Boss = boss(1+BossesBeat, (300+(150*BossesBeat))*Multiplier.hp, 5+BossesBeat, (150, 50), 10, rand, ImgBoss)
 		Boss.coords = ((ScreenX/2)-(Boss.size[0]/2), -Boss.size[1])
 		BossSpawnTime = Timer.time + 6000
-
-	#genMeteor(genMetor.genMetor(Multiplier.difficulty, 5, 5, 5), (ScreenX/2, 20))
 
 	#main loop
 	Running = True
@@ -943,7 +946,6 @@ while Looping:
 				if i.counts:
 					HitEfficiency = Decimal(float(HitEfficiency) + float(i.hp)/float(i.basehp))
 				else:
-					#HitEfficiency = Decimal(float(HitEfficiency) + float(i.basehp)-float(i.hp))
 					pass #I don't remember how this works
 				ShotCount += 1
 				Projectiles.remove(i)
@@ -1187,7 +1189,6 @@ while Looping:
 								if subevent.type == pygame.KEYDOWN:
 									if subevent.key == K_p:
 										pause = False
-							#pygame.display.update()
 							Clock.tick(30)
 
 					if event.key == K_EQUALS:
@@ -1308,7 +1309,6 @@ while Looping:
 			dialog = FontSmall.render("Meters: "+str(Timer.time), True, ClrWhite)
 			Screen.blit(dialog, [190, ScreenY-35])
 			
-			
 			dialog = FontSmall.render("dmg: "+str(RecentDamage), True, ClrWhite)
 			Screen.blit(dialog, [0, 0])
 			dialog = FontSmall.render("Crit: "+str(PlayerShip.hp * (Multiplier.difficulty+0.5) + RecentDamage), True, ClrWhite)
@@ -1346,21 +1346,13 @@ while Looping:
 				fireratio = float(Decimal(PlayerShip.gun.fires) / Decimal(PlayerShip.gun.maxfires+1))
 				pygame.draw.rect(Screen, (10, 30, 10), (109, ScreenY-56, 32, 42))
 				pygame.draw.rect(Screen, (200, 200, 200), (110, ScreenY-55, 30, 40*(1-fireratio)))
-				#pygame.draw.line(Screen, (120, 150, 120), (ScreenX, ScreenY-54), (ScreenX/2, ScreenY-54), 2) #backing color
-				#pygame.draw.line(Screen, (0, 255, 0), (ScreenX, ScreenY-54), (ScreenX * (0.5 + 0.5*fireratio), ScreenY-54), 2) #ammo
 			else: #blue if only one shot
 				pygame.draw.rect(Screen, (80, 80, 255), (110, ScreenY-55, 30, 40))
-				#pygame.draw.line(Screen, (80, 80, 255), (ScreenX, ScreenY-54), (ScreenX/2, ScreenY-54), 2)
 			
 
 		else:
 			pass
 
-		'''if localrand != False:
-			pygame.draw.circle(Screen, (255, 255, 255), localrand, 60, 2)
-			pygame.draw.circle(Screen, (255, 255, 255), localrand, 40, 2)
-			pygame.display.update()
-			raw_input("")'''
 		Screen.blit(Hud, (0, ScreenY-95))
 			
 		pygame.display.update()
