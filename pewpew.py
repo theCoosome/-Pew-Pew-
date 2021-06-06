@@ -778,6 +778,9 @@ while Looping:
 		Screen.blit(dialog, [0,500])
 		
 		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				Running = False
+				Looping = False
 			if event.type == pygame.KEYDOWN:
 				#movement
 				if event.key == K_LEFT:
@@ -877,7 +880,7 @@ while Looping:
 
 	#main loop
 	Running = True
-	while Running:
+	while Running and Looping:
 		if not Psych:
 			Screen.fill(ClrBlack) #Reset screen
 			Timer.backdrop += Multiplier.speed
@@ -1176,9 +1179,13 @@ while Looping:
 					if event.key == K_p:
 						pause = True
 						while pause:
-							for event in pygame.event.get():
-								if event.type == pygame.KEYDOWN:
-									if event.key == K_p:
+							for subevent in pygame.event.get():
+								if subevent.type == pygame.QUIT:
+									Running = False
+									Looping = False
+									pause = False
+								if subevent.type == pygame.KEYDOWN:
+									if subevent.key == K_p:
 										pause = False
 							#pygame.display.update()
 							Clock.tick(30)
@@ -1222,6 +1229,9 @@ while Looping:
 					Shooting = False
 				if event.key == K_DOWN:
 					MoveModifier = 2
+			if event.type == pygame.QUIT:
+				Running = False
+				Looping = False
 		
 		for i in Powerups:
 			if not collide(i.coords, i.size, (0, 0), (ScreenX, ScreenY)):
@@ -1379,7 +1389,7 @@ while Looping:
 		l4 = "Total score: " + str(score)
 
 	Running = True
-	while Running:
+	while Running and Looping:
 		dialog = FontSmall.render(highscore, True, ClrWhite)
 		Screen.blit(dialog, [5,ScreenY-16])
 		dialog = FontSmall.render(l1, True, ClrWhite) 
@@ -1393,6 +1403,9 @@ while Looping:
 		dialog = FontSmall.render(l4, True, ClrWhite) 
 		Screen.blit(dialog, [5,ScreenY-32])
 		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				Running = False
+				Looping = False
 			if event.type == pygame.KEYDOWN:
 				Running = False
 		pygame.display.update()
