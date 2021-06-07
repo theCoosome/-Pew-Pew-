@@ -18,9 +18,9 @@ Psych = False
 ConnectToServer, ServerIP, ServerPort = True, "174.25.72.161", 7778
 Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-ClrGreen = pygame.Color(0,255,0)
-ClrBlack = pygame.Color(0,0,0)
-ClrWhite = pygame.Color(255,255,255)
+ClrGreen = pygame.Color(0, 255, 0)
+ClrBlack = pygame.Color(0, 0, 0)
+ClrWhite = pygame.Color(255, 255, 255)
 ScreenX, ScreenY = 250, 650
 Screen = pygame.display.set_mode((ScreenX, ScreenY))
 Line = pygame.draw.line
@@ -55,7 +55,9 @@ BossesBeat = 0
 
 # The set of all meteor clusters that can be encountered.
 AllMeteors = [[
-	[2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
+	[2, [1, 2, 1],
+	[2, 3, 2],
+	[1, 2, 1]],
 	
 	[1, [0, 0, 1, 1, 0, 0],
 	[0, 1, 2, 2, 1, 0],
@@ -137,7 +139,9 @@ AllMeteors = [[
 	[2, [1, 1], [1, 1]],
 	[1, [1, 1], [1, 1]]
 	], [
-		[2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
+		[2, [1, 2, 1],
+		[2, 3, 2],
+		[1, 2, 1]],
 		
 		[1, [0, 0, 1, 1, 0, 0],
 		[0, 1, 2, 2, 1, 0],
@@ -211,8 +215,10 @@ AllMeteors = [[
 		
 		[2, [1, 1], [1, 1]],
 		[1, [1, 1], [1, 1]]
-	],[
-		[2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
+	], [
+		[2, [1, 2, 1],
+		[2, 3, 2],
+		[1, 2, 1]],
 		
 		[1, [0, 0, 1, 1, 0, 0],
 		[0, 1, 2, 2, 1, 0],
@@ -292,8 +298,10 @@ AllMeteors = [[
 		
 		[2, [1, 1], [1, 1]],
 		[1, [1, 1], [1, 1]]
-	],[
-		[2, [1, 2, 1],[2, 3, 2],[1, 2, 1]],
+	], [
+		[2, [1, 2, 1],
+		[2, 3, 2],
+		[1, 2, 1]],
 		
 		[1, [0, 0, 1, 1, 0, 0],
 		[0, 1, 2, 2, 1, 0],
@@ -495,7 +503,7 @@ class gun(object):
 		self.hp = hp
 		self.hpmod = hpmod
 		self.fires = 0
-		self.maxfires = fires-1
+		self.maxfires = fires - 1
 		self.size = size
 		# Times to loop
 		self.speed = speed
@@ -727,7 +735,7 @@ def calcEff():
 		efficiency = float(ShotCount - HitEfficiency) / float(ShotCount)
 	except ZeroDivisionError:
 		efficiency = 1
-	score, keeping = Timer.time + math.floor(10 * MeteorsDestroyed * efficiency) + ((Multiplier.difficulty+1) * 500 * BossesBeat), True
+	score, keeping = Timer.time + math.floor(10 * MeteorsDestroyed * efficiency) + ((Multiplier.difficulty + 1) * 500 * BossesBeat), True
 	if Psych:
 		score = math.floor(score * 1.5)
 	score, nscore = str(score), ""
@@ -874,7 +882,7 @@ while Looping:
 		if rand < 10:
 			rand = 10
 		Boss = boss(1 + BossesBeat, (300 + (150 * BossesBeat)) * Multiplier.hp, 5 + BossesBeat, (150, 50), 10, rand, ImgBoss)
-		Boss.coords = ((ScreenX / 2)-(Boss.size[0] / 2), - Boss.size[1])
+		Boss.coords = ((ScreenX / 2) - (Boss.size[0] / 2), - Boss.size[1])
 		BossSpawnTime = Timer.time + 6000
 
 	# Main game loop
@@ -886,7 +894,7 @@ while Looping:
 			Screen.fill(ClrBlack)
 			Timer.backdrop += Multiplier.speed
 			if Timer.backdrop >= 0:
-				Timer.backdrop = ScreenY-1000
+				Timer.backdrop = ScreenY - 1000
 			Screen.blit(ImgBackground, (0, Timer.backdrop))
 					
 		Timer.time += Multiplier.time
@@ -962,7 +970,7 @@ while Looping:
 
 				# Speed movement
 				for n in range(i.speed):
-					i.coords = (i.coords[0], i.coords[1]-i.move)
+					i.coords = (i.coords[0], i.coords[1] - i.move)
 					if i.id in ["Wall Placer", "Defender"]:
 						if i.move > 0:
 							i.move -= 1
@@ -1079,7 +1087,7 @@ while Looping:
 		
 		# Meteors
 		for i in Meteors:
-			if not collide(i.coords, i.size, (0, 0-100), (ScreenX, ScreenY)):
+			if not collide(i.coords, i.size, (0, -100), (ScreenX, ScreenY)):
 				Meteors.remove(i)
 			MeteorAlive = True
 			if int(i.hp) >= 4:
