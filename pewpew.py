@@ -38,8 +38,8 @@ pygame.draw.rect(Hud, (80, 80, 80), (0, 5, ScreenX, 10))
 pygame.draw.rect(Hud, ClrAccent, (0, 42, 58, 15))
 pygame.draw.rect(Hud, ClrAccent, (ScreenX, 42, -58, 15))
 for i in range(0, 30):
-	pygame.draw.arc(Hud, ClrAccent, (i/2, 42+i/2, 100-i, 50-i), 0, 1.56, 1)
-	pygame.draw.arc(Hud, ClrAccent, (150+i/2, 42+i/2, 100-i, 50-i), 1.57, 3.14, 1)
+	pygame.draw.arc(Hud, ClrAccent, (i / 2, 42 + i / 2, 100 - i, 50 - i), 0, 1.56, 1)
+	pygame.draw.arc(Hud, ClrAccent, (150 + i / 2, 42 + i / 2, 100 - i, 50 - i), 1.57, 3.14, 1)
 pygame.draw.rect(Hud, ClrAccent, (101, 42, 8, 53))
 pygame.draw.rect(Hud, ClrAccent, (141, 42, 8, 53))
 
@@ -430,7 +430,7 @@ def textWrite(text, pos, font=FontSmall, color=ClrWhite):
 
 # Returns the coordinates of the center of an object that has coords and size attributes.
 def center(obj):
-	return (obj.coords[0]+(obj.size[0]/2), obj.coords[1]+(obj.size[1]/2))
+	return (obj.coords[0] + (obj.size[0] / 2), obj.coords[1] + (obj.size[1] / 2))
 
 # Returns true if rectangles with corner/size pairs (p1,p2) (p3,p4) overlap.
 def collide(p1, p2, p3, p4):
@@ -458,8 +458,8 @@ class multipliers(object):
 # Basic object for particle system.
 class particle(object):
 	def __init__(self, coords, size, move, pics):
-		self.frame = len(pics)-1
-		self.coords = [coords[0]-(size[0]/2), coords[1]-(size[1]/2)]
+		self.frame = len(pics) - 1
+		self.coords = [coords[0] - (size[0] / 2), coords[1] - (size[1] / 2)]
 		self.size = size
 		self.move = move
 		self.pics = pics
@@ -519,7 +519,7 @@ class gun(object):
 	# Returns a new projectile object corresponding to the gun.
 	def makeProj(self, shipCoords):
 		global PlayerShip
-		newProj = proj(self.hp, (PlayerShip.coords[0]+(PlayerShip.size[0]/2)-(PlayerShip.gun.size[0]/2), PlayerShip.coords[1]-1), self.size, self.speed, self.move)
+		newProj = proj(self.hp, (PlayerShip.coords[0] + (PlayerShip.size[0] / 2) - (PlayerShip.gun.size[0] / 2), PlayerShip.coords[1] - 1), self.size, self.speed, self.move)
 		newProj.complete(self.dmg, self.pic, self.id, self.crit, self.screenCount)
 		return newProj
 		
@@ -553,7 +553,7 @@ class boss(object):
 		self.hp = hp
 		self.dmg = dmg
 		self.basehp = hp
-		self.coords = ((ScreenX/2)-(size[0]/2), -size[1])
+		self.coords = ((ScreenX / 2) - (size[0] / 2), -size[1])
 		self.size = size
 		self.atkint = atkint
 		self.speed = speed
@@ -568,8 +568,8 @@ class meteor(object):
 		self.size = (10, 10)
 		self.speed = speed
 		self.dmg = 1
-		self.timer = random.randint(0, 300-((hp-3)*30))
-		self.timerBase = 300-((hp-3)*30)
+		self.timer = random.randint(0, 300 - ((hp - 3) * 30))
+		self.timerBase = 300 - ((hp - 3) * 30)
 		
 # Base class to contain global timers and counters.
 class timers(object):
@@ -612,7 +612,7 @@ GunWall = gun("Wall Placer", 1, 56, 1, (50, 20), 1, 5, 1, 50, ImgProjShield2)
 GunWall.setBonus(False, 0.5)
 GunDefender = gun("Defender", 2, 20, 1, (20, 10), 1, 3, 1, 50, ImgProjShield)
 
-GunReducer = gun("Reducer", 1, 10000, 1, (ScreenX*2, ScreenY), 1, ScreenY, 1, 1, ImgBackground)
+GunReducer = gun("Reducer", 1, 10000, 1, (ScreenX * 2, ScreenY), 1, ScreenY, 1, 1, ImgBackground)
 GunReducer.setBonus(True, 1, False)
 
 Upgrades = [GunRail, GunLazer, GunDrill, GunShielding, GunGatling, GunWall, GunBomb]
@@ -649,18 +649,18 @@ def genMeteor(thisCluster, mod):
 			for w in range(len(thisCluster[h])):
 				thisMet = thisCluster[h][w]
 				if thisMet != 0:
-					Meteors.append(meteor(thisMet, (w*10+mod[0], h*10+mod[1]), speed))
+					Meteors.append(meteor(thisMet, ((w * 10) + mod[0], (h * 10) + mod[1]), speed))
 	
 # Cuts a number into a list of strings that are 4 digits long
 def cutToFour(number):
 	number = str(number)
 	leng = len(number)
 	if leng > 4:
-		print("Packet too long. Cutting " + str(int(number)-int(number[:4])) + " digits")
+		print("Packet too long. Cutting " + str(int(number) - int(number[:4])) + " digits")
 		number = number[:4]
 	if leng < 4:
-		for i in range(4-leng):
-			number = "0"+number
+		for i in range(4 - leng):
+			number = "0" + number
 	return number
 
 # Sends typewords to the server connected in Socket.
@@ -724,7 +724,7 @@ def calcEff():
 	global Socket
 	global Psych
 	try:
-		efficiency = float(ShotCount - HitEfficiency)/float(ShotCount)
+		efficiency = float(ShotCount - HitEfficiency) / float(ShotCount)
 	except ZeroDivisionError:
 		efficiency = 1
 	score, keeping = Timer.time + math.floor(10 * MeteorsDestroyed * efficiency) + ((Multiplier.difficulty+1) * 500 * BossesBeat), True
@@ -737,7 +737,7 @@ def calcEff():
 		if keeping:
 			nscore += i
 	score = int(nscore)
-	prints("your score: "+str(score)+"\nYour tier: "+str(Multiplier.difficulty))
+	prints("your score: " + str(score) + "\nYour tier: " + str(Multiplier.difficulty))
 	if OP:
 		out = "You were opped. High scores not counted."
 	else:
@@ -745,9 +745,9 @@ def calcEff():
 		Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		Socket.connect((ServerIP, ServerPort))
 		print("Connected")
-		sendInfo(str(Multiplier.difficulty)+" "+str(int(score)))
+		sendInfo(str(Multiplier.difficulty) + " " + str(int(score)))
 		out = serverRecieve()
-		out = out[:len(out)-1]
+		out = out[:len(out) - 1]
 		Socket.close()
 	return out, score, efficiency
 
@@ -762,19 +762,19 @@ while Looping:
 	# Mode selection screen loop
 	while Running:
 		Screen.fill(ClrBlack)
-		textWrite("Pew Pew", [70,25])
-		textWrite("Use left and right arrows to move", [0,50+20])
-		textWrite("Up arrow to fire weapons.", [0,50+20+20])
-		textWrite("Collect Poweups to upgrade your ship", [0,50+20+20+20])
-		Screen.blit(ImgPowerup, [ScreenX/2-20,50+80])
-		textWrite("Avoid meteors, and especially camps.", [0,50+100])
-		Screen.blit(ImgsetWalls[0], [60,50+120])
-		Screen.blit(ImgsetWalls[4], [200,50+120])
-		textWrite("See your stats at bottom of screen.", [0,50+140])
-		textWrite("Press an arrow key to select difficulty", [0,300])
-		textWrite("difficulty increases clockwise,", [0,300+16])
-		textWrite("from left as easy to down as impossible.", [0,300+32])
-		textWrite("And look out for someone at 10000m...", [0,500])
+		textWrite("Pew Pew", [70, 25])
+		textWrite("Use left and right arrows to move", [0, 50 + 20])
+		textWrite("Up arrow to fire weapons.", [0, 50 + 40])
+		textWrite("Collect Poweups to upgrade your ship", [0, 50 + 60])
+		Screen.blit(ImgPowerup, [(ScreenX / 2) - 20, 50 + 80])
+		textWrite("Avoid meteors, and especially camps.", [0, 50 + 100])
+		Screen.blit(ImgsetWalls[0], [60, 50 + 120])
+		Screen.blit(ImgsetWalls[4], [200, 50 + 120])
+		textWrite("See your stats at bottom of screen.", [0, 50 + 140])
+		textWrite("Press an arrow key to select difficulty", [0, 300])
+		textWrite("difficulty increases clockwise,", [0, 300 + 16])
+		textWrite("from left as easy to down as impossible.", [0, 300 + 32])
+		textWrite("And look out for someone at 10000m...", [0, 500])
 		
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
@@ -806,20 +806,20 @@ while Looping:
 
 	# Main variable resetting
 	Screen.fill(ClrBlack)
-	Line(Screen, ClrGreen, (0,0), (600,600), 3)
+	Line(Screen, ClrGreen, (0, 0), (600, 600), 3)
 	pygame.display.update()
 	print("updated screen")
 
 	Particles = []
 	Projectiles = []
 	Powerups = []
-	Powerups.append(powerup(((ScreenX/2)-7, 50), 1))
-	PlayerShip = ships(4, ((ScreenX/2)-15, 500), (6, 10), 1)
-	Boss = boss(1, 200*Multiplier.hp, 10, (150, 50), 10, 500/Multiplier.cooldown, pygame.image.load('imgs/pewpew_enmBoss.png'))
+	Powerups.append(powerup(((ScreenX / 2) - 7, 50), 1))
+	PlayerShip = ships(4, ((ScreenX / 2) - 15, 500), (6, 10), 1)
+	Boss = boss(1, 200 * Multiplier.hp, 10, (150, 50), 10, 500 / Multiplier.cooldown, ImgBoss)
 	BossesBeat = 0
 	Meteors = []
 	for i in range(5):
-		boolet = meteor(1, (random.randint(0,25)*10, 10), random.randint(1, 2))
+		boolet = meteor(1, (random.randint(0, 25) * 10, 10), random.randint(1, 2))
 		Meteors.append(boolet)
 	Timer = timers()
 	MeteorsSubset = AllMeteors[Multiplier.difficulty]
@@ -827,7 +827,7 @@ while Looping:
 	if Multiplier.difficulty == 2:
 		equip(GunShielding2)
 	elif Multiplier.difficulty == 3:
-		equip(Upgrades[random.randint(0, len(Upgrades)-1)])
+		equip(Upgrades[random.randint(0, len(Upgrades) - 1)])
 	else:
 		equip(GunBase)
 	
@@ -863,18 +863,18 @@ while Looping:
 		
 		Fps = 10
 		Multiplier.meteors /= 2
-		particleRange = math.floor(Boss.size[0]/10)
+		particleRange = math.floor(Boss.size[0] / 10)
 		for z in range(9):
-			pos1 = random.randint((Boss.coords[0]+(z*particleRange)), (Boss.coords[0]+((z+1)*particleRange)))
-			pos2 = random.randint(Boss.coords[1], (Boss.coords[1]+Boss.size[1]))
+			pos1 = random.randint((Boss.coords[0] + (z * particleRange)), (Boss.coords[0] + ((z + 1) * particleRange)))
+			pos2 = random.randint(Boss.coords[1], (Boss.coords[1] + Boss.size[1]))
 			Particles.append(particle([pos1, pos2], [10, 10], [random.randint(-2, 2), random.randint(-1, 3)], ImgsetFlareup))
 		Boss.on = 0
 		BossesBeat += 1
-		rand = (500/Multiplier.cooldown)-(BossesBeat*10)
+		rand = (500 / Multiplier.cooldown) - (BossesBeat * 10)
 		if rand < 10:
 			rand = 10
-		Boss = boss(1+BossesBeat, (300+(150*BossesBeat))*Multiplier.hp, 5+BossesBeat, (150, 50), 10, rand, ImgBoss)
-		Boss.coords = ((ScreenX/2)-(Boss.size[0]/2), -Boss.size[1])
+		Boss = boss(1 + BossesBeat, (300 + (150 * BossesBeat)) * Multiplier.hp, 5 + BossesBeat, (150, 50), 10, rand, ImgBoss)
+		Boss.coords = ((ScreenX / 2)-(Boss.size[0] / 2), - Boss.size[1])
 		BossSpawnTime = Timer.time + 6000
 
 	# Main game loop
@@ -902,14 +902,14 @@ while Looping:
 		if not PlayerAlive and Fps > 0:
 			Fps -= 1
 			# Seconds? probably. 1/60th of a second at 60 Fps to 1/1 at 1 Fps
-			Timer.neardead += 1/float(Fps) 
+			Timer.neardead += 1 / float(Fps) 
 			if Fps < 2:
 				Running = False
 				
 		Timer.meteors -= 1
 		if Timer.meteors <= 0:
 			Timer.meteors = Multiplier.meteors
-			genMeteor(MeteorsSubset[random.randint(0,len(MeteorsSubset)-1)], (random.randint(0-20, ScreenX+20), 0-100))
+			genMeteor(MeteorsSubset[random.randint(0, len(MeteorsSubset) - 1)], (random.randint(-20, ScreenX + 20), -100))
 
 		if Timer.time % 12 == 0 and RecentDamage > 0:
 			RecentDamage -= 1
@@ -924,9 +924,9 @@ while Looping:
 		Timer.move -= 1
 		if Timer.move <= 0:
 			Timer.move = PlayerShip.move
-			PlayerShip.coords = (PlayerShip.coords[0]+PlayerShip.mom, PlayerShip.coords[1])
-			if PlayerShip.coords[0] > ScreenX-PlayerShip.size[0]:
-				PlayerShip.coords = (ScreenX-PlayerShip.size[0], PlayerShip.coords[1])
+			PlayerShip.coords = (PlayerShip.coords[0] + PlayerShip.mom, PlayerShip.coords[1])
+			if PlayerShip.coords[0] > ScreenX - PlayerShip.size[0]:
+				PlayerShip.coords = (ScreenX - PlayerShip.size[0], PlayerShip.coords[1])
 			if PlayerShip.coords[0] < 0:
 				PlayerShip.coords = (0, PlayerShip.coords[1])
 			for i in Projectiles:
@@ -944,7 +944,7 @@ while Looping:
 		for i in Projectiles:
 			if not collide(i.coords, i.size, (0, 0), (ScreenX, ScreenY)):
 				if i.counts:
-					HitEfficiency = Decimal(float(HitEfficiency) + float(i.hp)/float(i.basehp))
+					HitEfficiency = Decimal(float(HitEfficiency) + (float(i.hp) / float(i.basehp)))
 				ShotCount += 1
 				Projectiles.remove(i)
 			else:
@@ -953,11 +953,11 @@ while Looping:
 					if Boss.on:
 						Multiplier.meteors /= 2
 						Boss.on = 0
-						attackInterval = (500/Multiplier.cooldown)-(BossesBeat*10)
+						attackInterval = (500 / Multiplier.cooldown) - (BossesBeat * 10)
 						if attackInterval < 10:
 							attackInterval = 10
-						Boss = boss(1+BossesBeat, (300+(150*BossesBeat))*Multiplier.hp, 5+BossesBeat, (150, 50), 10, attackInterval, ImgBoss)
-						Boss.coords = ((ScreenX/2)-(Boss.size[0]/2), -Boss.size[1])
+						Boss = boss(1 + BossesBeat, (300 + (150 * BossesBeat)) * Multiplier.hp, 5 + BossesBeat, (150, 50), 10, attackInterval, ImgBoss)
+						Boss.coords = ((ScreenX / 2) - (Boss.size[0] / 2), - Boss.size[1])
 						BossSpawnTime = Timer.time + 6000
 
 				# Speed movement
@@ -970,8 +970,8 @@ while Looping:
 							i.speed = 4
 					for x in Meteors:
 						if collide(i.coords, i.size, x.coords, x.size):
-							Particles.append(particle(center(x), [10, 10], [0, random.randint(x.speed-1, x.speed+1)], ImgsetCrumble))
-							RecentDamage += (i.dmg*i.crit) if x.hp > i.dmg else (x.hp*i.crit)
+							Particles.append(particle(center(x), [10, 10], [0, random.randint(x.speed - 1, x.speed + 1)], ImgsetCrumble))
+							RecentDamage += (i.dmg * i.crit) if x.hp > i.dmg else (x.hp * i.crit)
 							x.hp -= i.dmg
 							i.hp -= x.dmg
 							prints("Boolet: " + str(i.hp))
@@ -984,9 +984,9 @@ while Looping:
 									Particles.append(particle(center(i), [10, 10], [random.randint(-1, 1), random.randint(-1, 1)], ImgsetSparks))
 								if i.id == "Wall Placer":
 									misc = center(i)
-									Particles.append(particle([misc[0]-random.randint(1, 10), 2], [10, 10], [random.randint(-1, 1), random.randint(-1, 1)], ImgsetSparks))
+									Particles.append(particle([misc[0] - random.randint(1, 10), 2], [10, 10], [random.randint(-1, 1), random.randint(-1, 1)], ImgsetSparks))
 									Particles.append(particle([misc[0], 2], [10, 10], [random.randint(-1, 1), random.randint(-1, 1)], ImgsetSparks))
-									Particles.append(particle([misc[0]+random.randint(1, 10), 2], [10, 10], [random.randint(-1, 1), random.randint(-1, 1)], ImgsetSparks))
+									Particles.append(particle([misc[0] + random.randint(1, 10), 2], [10, 10], [random.randint(-1, 1), random.randint(-1, 1)], ImgsetSparks))
 							prints("Meteor: " + str(x.hp))
 							if x.hp <= 0:
 								Meteors.remove(x)
@@ -996,9 +996,9 @@ while Looping:
 					
 					if ProjAlive:
 						if collide(i.coords, i.size, Boss.coords, Boss.size) and Boss.on == 1:
-							Particles.append(particle([i.coords[0]+(i.size[0]/2), i.coords[1]-i.move], [10, 10], [0, 1], ImgsetExplosion))
+							Particles.append(particle([i.coords[0] + (i.size[0] / 2), i.coords[1] - i.move], [10, 10], [0, 1], ImgsetExplosion))
 							prints("hit boss")
-							RecentDamage += (i.dmg*i.crit) if x.hp > i.dmg else (x.hp*i.crit)
+							RecentDamage += (i.dmg * i.crit) if x.hp > i.dmg else (x.hp * i.crit)
 							Boss.hp -= i.dmg
 							i.hp -= Boss.dmg
 							prints("Boolet: " + str(i.hp))
@@ -1014,23 +1014,23 @@ while Looping:
 				# Projectile ID specific operations
 				if i.id in ["Wall Placer", "Defender"]:
 					# Draw hp lines and regenerate health
-					hpratio = Decimal(i.hp)/Decimal(i.basehp)
-					pygame.draw.aaline(Screen, (max(225-225*hpratio, 0), max(225*hpratio, 0), 0), (i.coords[0], i.coords[1]+5), (i.coords[0]+int(hpratio*i.size[0]/2), i.coords[1]+5), True)
-					pygame.draw.aaline(Screen, (max(225-225*hpratio, 0), max(225*hpratio, 0), 0), (i.coords[0]+i.size[0], i.coords[1]+5), (i.coords[0]+i.size[0]-int(hpratio*i.size[0]/2), i.coords[1]+5), True)
+					hpratio = Decimal(i.hp) / Decimal(i.basehp)
+					pygame.draw.aaline(Screen, (max(225 - (225 * hpratio), 0), max(225 * hpratio, 0), 0), (i.coords[0], i.coords[1] + 5), (i.coords[0] + int(hpratio * i.size[0] / 2), i.coords[1] + 5), True)
+					pygame.draw.aaline(Screen, (max(225 - (225 * hpratio), 0), max(225 * hpratio, 0), 0), (i.coords[0] + i.size[0], i.coords[1] + 5), (i.coords[0] + i.size[0] - int(hpratio * i.size[0] / 2), i.coords[1] + 5), True)
 					if i.hp < i.basehp:
 						i.hp += 0.5
-						if i.hp < i.basehp * (5-Multiplier.difficulty)/4:
+						if i.hp < i.basehp * (5 - Multiplier.difficulty) / 4:
 							i.hp -= 0.25
 				if i.id == "Laser Beam":
-					pygame.draw.line(Screen, (130, 0, 0), (PlayerShip.coords[0]+2, PlayerShip.coords[1]), (PlayerShip.coords[0]+2, i.coords[1]), 2)
+					pygame.draw.line(Screen, (130, 0, 0), (PlayerShip.coords[0] + 2, PlayerShip.coords[1]), (PlayerShip.coords[0] + 2, i.coords[1]), 2)
 				if i.id == "Decimator":
-					pygame.draw.line(Screen, (200, 0, 0), (PlayerShip.coords[0]+2, PlayerShip.coords[1]), (PlayerShip.coords[0]+2, i.coords[1]), 4)
+					pygame.draw.line(Screen, (200, 0, 0), (PlayerShip.coords[0] + 2, PlayerShip.coords[1]), (PlayerShip.coords[0] + 2, i.coords[1]), 4)
 				if i.id == "Ender":
-					pygame.draw.line(Screen, (100, 0, 0), (PlayerShip.coords[0]+2, PlayerShip.coords[1]-10), (PlayerShip.coords[0]+2, 0), 20)
-					pygame.draw.line(Screen, (200, 0, 0), (PlayerShip.coords[0]+2, PlayerShip.coords[1]), (PlayerShip.coords[0]+2, 0), 4)
+					pygame.draw.line(Screen, (100, 0, 0), (PlayerShip.coords[0] + 2, PlayerShip.coords[1] - 10), (PlayerShip.coords[0] + 2, 0), 20)
+					pygame.draw.line(Screen, (200, 0, 0), (PlayerShip.coords[0] + 2, PlayerShip.coords[1]), (PlayerShip.coords[0] + 2, 0), 4)
 				if i.id == "Scientific":
-					pygame.draw.line(Screen, (90, 70, 70), (PlayerShip.coords[0]+2, PlayerShip.coords[1]-10), (PlayerShip.coords[0]+2, 0), 30)
-					pygame.draw.line(Screen, (255, 255, 255), (PlayerShip.coords[0]+2, PlayerShip.coords[1]), (PlayerShip.coords[0]+2, 0), 2)
+					pygame.draw.line(Screen, (90, 70, 70), (PlayerShip.coords[0] + 2, PlayerShip.coords[1] - 10), (PlayerShip.coords[0] + 2, 0), 30)
+					pygame.draw.line(Screen, (255, 255, 255), (PlayerShip.coords[0] + 2, PlayerShip.coords[1]), (PlayerShip.coords[0] + 2, 0), 2)
 				Screen.blit(i.pic, i.coords)
 				if not ProjAlive:
 					if i.id in ["Bomb Launcher", "Nuclear Charge"]:
@@ -1038,38 +1038,38 @@ while Looping:
 						if i.id == "Nuclear Charge":
 							boost = 3
 						# Blast radius
-						BR = (i.coords[0]-58*boost, i.coords[1]-58*boost)
-						if collide(BR, (120*boost, 120*boost), Boss.coords, Boss.size) and Boss.on:
-							Xover = max(0, min(Boss.coords[0]+Boss.size[0], BR[0]+120*boost)-max(Boss.coords[0], BR[0]))
-							Yover = max(0, min(Boss.coords[1]+Boss.size[1], BR[1]+120*boost)-max(Boss.coords[1], BR[1]))
+						BR = (i.coords[0] - (58 * boost), i.coords[1] - (58 * boost))
+						if collide(BR, (120 * boost, 120 * boost), Boss.coords, Boss.size) and Boss.on:
+							Xover = max(0, min(Boss.coords[0] + Boss.size[0], BR[0] + (120 * boost)) - max(Boss.coords[0], BR[0]))
+							Yover = max(0, min(Boss.coords[1] + Boss.size[1], BR[1] + (120 * boost)) - max(Boss.coords[1], BR[1]))
 							overlap = Xover * Yover
-							RecentDamage += i.crit*boost*overlap/100 if Boss.hp > overlap/100 else Boss.hp*i.crit
-							Boss.hp -= boost*overlap/100
+							RecentDamage += i.crit * boost * overlap / 100 if Boss.hp > overlap / 100 else Boss.hp * i.crit
+							Boss.hp -= boost * overlap / 100
 							if Boss.hp <= 0:
 								killBoss()
 						
-						pygame.draw.circle(Screen, (200, 200, 200, 0.05), center(i), 60*boost)
-						pygame.draw.circle(Screen, (250, 250, 250, 0.1), center(i), 35*boost)
+						pygame.draw.circle(Screen, (200, 200, 200, 0.05), center(i), 60 * boost)
+						pygame.draw.circle(Screen, (250, 250, 250, 0.1), center(i), 35 * boost)
 						
 						# Meteor destruction loop
 						MeteorQuant = len(Meteors)
 						for n in range(MeteorQuant):
-							x = Meteors[MeteorQuant-(n+1)]
-							xdiff = (center(i)[0]-(center(x)[0]))
-							ydiff = (center(i)[1]-(center(x)[1]))
+							x = Meteors[MeteorQuant - (n + 1)]
+							xdiff = (center(i)[0] - (center(x)[0]))
+							ydiff = (center(i)[1] - (center(x)[1]))
 							distance = math.hypot(xdiff, ydiff)
-							if distance < 60*boost:
+							if distance < 60 * boost:
 								if distance < 0.1:
 									distance = 0.1
-								dmg = math.floor(80*boost / distance)
-								if distance > 35*boost:
+								dmg = math.floor(80 * boost / distance)
+								if distance > 35 * boost:
 									dmg *= 0.6
 								else:
 									if Psych:
-										Particles.append(particle(center(x), [10, 10], [xdiff*(1/distance), (abs(x.speed)*ydiff)*(1/distance)], ImgsetCrumble))
+										Particles.append(particle(center(x), [10, 10], [xdiff / distance, (abs(x.speed) * ydiff / distance)], ImgsetCrumble))
 									else:
-										Particles.append(particle(center(x), [10, 10], [xdiff*(-1/distance), (abs(x.speed)*ydiff)*(-1/distance)], ImgsetCrumble))
-								RecentDamage += int(dmg)*i.crit if x.hp > dmg else x.hp*i.crit
+										Particles.append(particle(center(x), [10, 10], [0 - (xdiff / distance), 0 - (abs(x.speed) * ydiff / distance)], ImgsetCrumble))
+								RecentDamage += int(dmg) * i.crit if x.hp > dmg else x.hp * i.crit
 								x.hp -= int(dmg)
 								if x.hp <= 0:
 									Meteors.remove(x)
@@ -1086,15 +1086,15 @@ while Looping:
 				i.timer -= 1
 				if i.timer <= 0:
 					i.timer = i.timerBase
-					Meteors.append(meteor(i.hp-3, i.coords, (i.hp-2)*2))
+					Meteors.append(meteor(i.hp - 3, i.coords, (i.hp - 2) * 2))
 			# Movement
 			for n in range(int(i.speed)):
-				i.coords = (i.coords[0], i.coords[1]+Multiplier.speed)
+				i.coords = (i.coords[0], i.coords[1] + Multiplier.speed)
 				if collide(PlayerShip.coords, PlayerShip.size, i.coords, i.size):
 					if PlayerAlive:
 						shipCenter = center(PlayerShip)
 						Particles.append(particle([shipCenter[0], PlayerShip.coords[1]], [10, 10], [0, 1], ImgsetExplosion))
-						Particles.append(particle([shipCenter[0]+random.randint(-1, 1), shipCenter[1]+random.randint(-1, 1)], [10, 10], [0, 1], ImgsetSparks))
+						Particles.append(particle([shipCenter[0] + random.randint(-1, 1), shipCenter[1] + random.randint(-1, 1)], [10, 10], [0, 1], ImgsetSparks))
 					thisship = ImgPlayerDamaged
 					i.hp -= PlayerShip.dmg
 					PlayerShip.hp -= i.dmg
@@ -1117,15 +1117,15 @@ while Looping:
 			Timer.bossatk -= 1
 			if Timer.bossatk <= 0:
 				Timer.bossatk = Boss.atkint
-				genMeteor([1, [1, 2, 1, 0, 0, 0, 0, 0, 1, 2, 1], [2, 5, 2, 1, 1, 2, 1, 1, 2, 5, 2], [1, 2, 1, 1, 2, 6, 2, 1, 1, 2, 1], [0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0]], (Boss.coords[0]+20, Boss.coords[1]-15))
+				genMeteor([1, [1, 2, 1, 0, 0, 0, 0, 0, 1, 2, 1], [2, 5, 2, 1, 1, 2, 1, 1, 2, 5, 2], [1, 2, 1, 1, 2, 6, 2, 1, 1, 2, 1], [0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0]], (Boss.coords[0] + 20, Boss.coords[1] - 15))
 			BossMoveTime -= 1
 			if BossMoveTime < 1:
-				if Boss.coords[0]+(Boss.size[0]/2) > PlayerShip.coords[0]+(PlayerShip.size[0]/2):
-					Boss.coords = (Boss.coords[0]-1, Boss.coords[1])
-				if Boss.coords[0]+(Boss.size[0]/2) < PlayerShip.coords[0]+(PlayerShip.size[0]/2):
-					Boss.coords = (Boss.coords[0]+1, Boss.coords[1])
+				if Boss.coords[0] + (Boss.size[0] / 2) > PlayerShip.coords[0] + (PlayerShip.size[0] / 2):
+					Boss.coords = (Boss.coords[0] - 1, Boss.coords[1])
+				if Boss.coords[0] + (Boss.size[0] / 2) < PlayerShip.coords[0] + (PlayerShip.size[0] / 2):
+					Boss.coords = (Boss.coords[0] + 1, Boss.coords[1])
 				if Boss.coords[1] < 10:
-					Boss.coords = (Boss.coords[0], Boss.coords[1]+1)
+					Boss.coords = (Boss.coords[0], Boss.coords[1] + 1)
 				BossMoveTime = Boss.speed
 		
 		
@@ -1172,9 +1172,9 @@ while Looping:
 					if event.key == K_MINUS:
 						SelectorIndex -= 1
 					if event.key == K_LEFTBRACKET:
-						equip(Upgrades[SelectorIndex%len(Upgrades)])
+						equip(Upgrades[SelectorIndex % len(Upgrades)])
 					if event.key == K_RIGHTBRACKET:
-						equip(Upgrades2[SelectorIndex%len(Upgrades2)])
+						equip(Upgrades2[SelectorIndex % len(Upgrades2)])
 					if event.key == K_b:
 						Multiplier.meteors *= 2
 						Boss.on = 1
@@ -1215,12 +1215,12 @@ while Looping:
 			if not collide(i.coords, i.size, (0, 0), (ScreenX, ScreenY)):
 				Powerups.remove(i)
 			for n in range(i.speed):
-				i.coords = (i.coords[0], i.coords[1]+2)
+				i.coords = (i.coords[0], i.coords[1] + 2)
 				if collide(i.coords, i.size, PlayerShip.coords, PlayerShip.size):
 					Powerups.remove(i)
-					upgradeIndex = random.randint(0, len(Upgrades)-1)
-					crit = PlayerShip.hp * (Multiplier.difficulty+0.5) + RecentDamage
-					print ("       "+str(crit))
+					upgradeIndex = random.randint(0, len(Upgrades) - 1)
+					crit = PlayerShip.hp * (Multiplier.difficulty + 0.5) + RecentDamage
+					print ("       " + str(crit))
 					if random.randint(30, 400) <= crit:
 						if crit > 400 and random.randint(400, 1000) < crit:
 							equip(GunLazer3)
@@ -1241,8 +1241,8 @@ while Looping:
 			
 		Timer.powerup -= 1
 		if Timer.powerup < 0:
-			Timer.powerup = random.randint(500/Multiplier.cooldown, 900/Multiplier.cooldown)
-			Powerups.append(powerup((random.randint(20, ScreenX-20), 50), random.randint(1, 2)))
+			Timer.powerup = random.randint(500 / Multiplier.cooldown, 900 / Multiplier.cooldown)
+			Powerups.append(powerup((random.randint(20, ScreenX - 20), 50), random.randint(1, 2)))
 			
 		if PlayerShip.hp > 0:
 			PlayerAlive = True
@@ -1256,7 +1256,7 @@ while Looping:
 			if not collide(i.coords, i.size, (0, 0), (ScreenX, ScreenY)):
 				Particles.remove(i)
 			else:
-				i.coords = (i.coords[0]+i.move[0], i.coords[1]+i.move[1])
+				i.coords = (i.coords[0] + i.move[0], i.coords[1] + i.move[1])
 				i.timer -= 1
 				ParticleAlive = True
 				if i.timer == 0:
@@ -1272,60 +1272,60 @@ while Looping:
 
 		# Hud drawing
 		if PlayerAlive:
-			hpratio = (Decimal(PlayerShip.hp)/Decimal(PlayerShip.basehp))*100
+			hpratio = (Decimal(PlayerShip.hp) / Decimal(PlayerShip.basehp)) * 100
 			if hpratio >= 100:
 				hpratio = float(hpratio)
 			if PlayerShip.hp < 0:
 				misc = "Open hull"
 				dialog = FontLarge.render(misc, True, (255, 100, 100))
-				pygame.draw.line(Screen, (255, 10, 10), (0, 0), (0, ScreenY-95), 1)
-				pygame.draw.line(Screen, (255, 10, 10), (249, 0), (249, ScreenY-95), 1)
+				pygame.draw.line(Screen, (255, 10, 10), (0, 0), (0, ScreenY - 95), 1)
+				pygame.draw.line(Screen, (255, 10, 10), (249, 0), (249, ScreenY - 95), 1)
 			else:
-				Screen.blit(FontSmall.render("Health", True, ClrWhite), [5,ScreenY-35])
-				dialog = FontLarge.render(str(hpratio)+"%", True, ClrWhite)    
-			Screen.blit(dialog, [5,ScreenY-23])
-			textWrite("Meters: "+str(Timer.time), [190, ScreenY-35])
+				Screen.blit(FontSmall.render("Health", True, ClrWhite), [5, ScreenY - 35])
+				dialog = FontLarge.render(str(hpratio) + "%", True, ClrWhite)    
+			Screen.blit(dialog, [5, ScreenY - 23])
+			textWrite("Meters: " + str(Timer.time), [190, ScreenY - 35])
 			
-			textWrite("dmg: "+str(RecentDamage), [0, 0])
-			textWrite("Crit: "+str(PlayerShip.hp * (Multiplier.difficulty+0.5) + RecentDamage), [0, 20])
+			textWrite("dmg: " + str(RecentDamage), [0, 0])
+			textWrite("Crit: " + str(PlayerShip.hp * (Multiplier.difficulty + 0.5) + RecentDamage), [0, 20])
 			textWrite(str(SelectorIndex), [0, 40])
 			
 			# Gun name
-			textWrite("::"+PlayerShip.gun.id, [0, ScreenY-78], FontLarge)
+			textWrite("::" + PlayerShip.gun.id, [0, ScreenY - 78], FontLarge)
 
 			# Gun cooldown visual
 			if PlayerShip.gun.cooldown > 0:
-				fireratio = Decimal(Timer.guncool)/Decimal(PlayerShip.gun.cooldown)
+				fireratio = Decimal(Timer.guncool) / Decimal(PlayerShip.gun.cooldown)
 				fireratio = max(min(1, fireratio), 0)
-				pygame.draw.line(Screen, (255, 0, 0), (0, ScreenY-55), (100, ScreenY-55), 1)
-				pygame.draw.line(Screen, (255, 0, 0), (100, ScreenY-55), (100, ScreenY-33), 1)
-				color = (max(225*fireratio, 0), max(225-(225*fireratio), 0), 0)
-				pygame.draw.rect(Screen, color, (0, ScreenY-56, 100-int(fireratio*100), 16))
-				pygame.draw.rect(Screen, color, (250, ScreenY-56, -100+int(fireratio*100), 16))
+				pygame.draw.line(Screen, (255, 0, 0), (0, ScreenY - 55), (100, ScreenY - 55), 1)
+				pygame.draw.line(Screen, (255, 0, 0), (100, ScreenY - 55), (100, ScreenY - 33), 1)
+				color = (max(225 * fireratio, 0), max(225 - (225 * fireratio), 0), 0)
+				pygame.draw.rect(Screen, color, (0, ScreenY - 56, 100 - int(fireratio * 100), 16))
+				pygame.draw.rect(Screen, color, (250, ScreenY - 56, -100 + int(fireratio * 100), 16))
 				# Extra bright when ready to fire
 				if fireratio <= 0.1: 
-					pygame.draw.rect(Screen, (0, 255, 0), (90, ScreenY-40, 10-(fireratio*100), 7))
-					pygame.draw.rect(Screen, (0, 255, 0), (160, ScreenY-40, -(10-(fireratio*100)), 7))
+					pygame.draw.rect(Screen, (0, 255, 0), (90, ScreenY - 40, 10 - (fireratio * 100), 7))
+					pygame.draw.rect(Screen, (0, 255, 0), (160, ScreenY - 40, -(10 - (fireratio * 100)), 7))
 			else:
 				# No cooldown weapons
-				pygame.draw.rect(Screen, (0, 255, 0), (0, ScreenY-56, 100, 15))
-				pygame.draw.rect(Screen, (0, 255, 0), (90, ScreenY-40, 10, 7))
-				pygame.draw.rect(Screen, (0, 255, 0), (150, ScreenY-56, 100, 15))
-				pygame.draw.rect(Screen, (0, 255, 0), (150, ScreenY-40, 10, 7))
+				pygame.draw.rect(Screen, (0, 255, 0), (0, ScreenY - 56, 100, 15))
+				pygame.draw.rect(Screen, (0, 255, 0), (90, ScreenY - 40, 10, 7))
+				pygame.draw.rect(Screen, (0, 255, 0), (150, ScreenY - 56, 100, 15))
+				pygame.draw.rect(Screen, (0, 255, 0), (150, ScreenY - 40, 10, 7))
 
-			dialog = FontSmall.render(str(PlayerShip.gun.maxfires-PlayerShip.gun.fires+1), True, ClrWhite)    
-			Screen.blit(dialog, [111, ScreenY-14])
+			dialog = FontSmall.render(str(PlayerShip.gun.maxfires - PlayerShip.gun.fires + 1), True, ClrWhite)    
+			Screen.blit(dialog, [111, ScreenY - 14])
 			# Ammo visual
 			if (PlayerShip.gun.maxfires):
-				fireratio = float(Decimal(PlayerShip.gun.fires) / Decimal(PlayerShip.gun.maxfires+1))
-				pygame.draw.rect(Screen, (10, 30, 10), (109, ScreenY-56, 32, 42))
-				pygame.draw.rect(Screen, (200, 200, 200), (110, ScreenY-55, 30, 40*(1-fireratio)))
+				fireratio = float(Decimal(PlayerShip.gun.fires) / Decimal(PlayerShip.gun.maxfires + 1))
+				pygame.draw.rect(Screen, (10, 30, 10), (109, ScreenY - 56, 32, 42))
+				pygame.draw.rect(Screen, (200, 200, 200), (110, ScreenY - 55, 30, 40 * (1 - fireratio)))
 			else: 
 				# Blue if only one shot
-				pygame.draw.rect(Screen, (80, 80, 255), (110, ScreenY-55, 30, 40))
+				pygame.draw.rect(Screen, (80, 80, 255), (110, ScreenY - 55, 30, 40))
 
 		if Running:
-			Screen.blit(Hud, (0, ScreenY-95))
+			Screen.blit(Hud, (0, ScreenY - 95))
 			
 		pygame.display.update()
 		Clock.tick(Fps)
@@ -1333,34 +1333,34 @@ while Looping:
 	# Post game review text
 	print(Timer.neardead)
 	if Multiplier.difficulty == 0:
-		l1 = "You cleaned up "+str(Timer.time)+" meters."
-		l2, l5 = str(MeteorsDestroyed) + " meteor units sweeped ", "at "+str(math.floor(efficiency*100))+"% efficiency."
+		l1 = "You cleaned up " + str(Timer.time) + " meters."
+		l2, l5 = str(MeteorsDestroyed) + " meteor units sweeped ", "at " + str(math.floor(efficiency * 100)) + "% efficiency."
 		l3 = str(BossesBeat) + " Anti-Gonists encountered."
 		l4 = "Total score: " + str(score)
 	if Multiplier.difficulty == 1:
-		l1 = "You cleared "+str(Timer.time)+" meters."
-		l2, l5 = str(MeteorsDestroyed) + " meteor units eliminated ", "at "+str(math.floor(efficiency*100))+"% efficiency."
+		l1 = "You cleared " + str(Timer.time) + " meters."
+		l2, l5 = str(MeteorsDestroyed) + " meteor units eliminated ", "at " + str(math.floor(efficiency * 100)) + "% efficiency."
 		l3 = str(BossesBeat) + " Anti-Gonists fought."
 		l4 = "Total score: " + str(score)
 	if Multiplier.difficulty == 2:
-		l1 = "You trekked "+str(Timer.time)+" meters!"
-		l2, l5 = str(MeteorsDestroyed) + " meteor units removed ", "at "+str(math.floor(efficiency*100))+"% efficiency."
+		l1 = "You trekked " + str(Timer.time) + " meters!"
+		l2, l5 = str(MeteorsDestroyed) + " meteor units removed ", "at " + str(math.floor(efficiency * 100)) + "% efficiency."
 		l3 = str(BossesBeat) + " Anti-Gonists eliminated."
 		l4 = "Total score: " + str(score)
 	if Multiplier.difficulty == 3:
-		l1 = "You survived "+str(Timer.time)+" meters!"
-		l2, l5 = str(MeteorsDestroyed) + " meteor units swiped ", "at "+str(math.floor(efficiency*100))+"% efficiency."
+		l1 = "You survived " + str(Timer.time) + " meters!"
+		l2, l5 = str(MeteorsDestroyed) + " meteor units swiped ", "at " + str(math.floor(efficiency * 100)) + "% efficiency."
 		l3 = str(BossesBeat) + " Anti-Gonists destroyed."
 		l4 = "Total score: " + str(score)
 
 	Running = True
 	while Running and Looping:
-		textWrite(highscore, [5,ScreenY-16])
-		textWrite(l1, [5,ScreenY-96])
-		textWrite(l2, [5,ScreenY-80])
-		textWrite(l5, [5,ScreenY-64])
-		textWrite(l3, [5,ScreenY-48])
-		textWrite(l4, [5,ScreenY-32])
+		textWrite(highscore, [5, ScreenY - 16])
+		textWrite(l1, [5, ScreenY - 96])
+		textWrite(l2, [5, ScreenY - 80])
+		textWrite(l5, [5, ScreenY - 64])
+		textWrite(l3, [5, ScreenY - 48])
+		textWrite(l4, [5, ScreenY - 32])
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				Running = False
@@ -1371,4 +1371,4 @@ while Looping:
 		Clock.tick(4)
 
 	dialog = FontSmall.render("Pew Pew", True, ClrWhite)    
-	Screen.blit(dialog, [0,50])
+	Screen.blit(dialog, [0, 50])
