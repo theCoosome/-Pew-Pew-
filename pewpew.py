@@ -2,7 +2,6 @@ import sys
 import time
 import random
 import pygame
-import json
 import math
 import socket
 from decimal import *
@@ -21,6 +20,7 @@ Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 ClrGreen = pygame.Color(0, 255, 0)
 ClrBlack = pygame.Color(0, 0, 0)
 ClrWhite = pygame.Color(255, 255, 255)
+ClrAccent = (50, 50, 50)
 ScreenX, ScreenY = 250, 650
 Screen = pygame.display.set_mode((ScreenX, ScreenY))
 Line = pygame.draw.line
@@ -30,18 +30,6 @@ FontSmall = pygame.font.SysFont('Calibri', 15)
 FontLarge = pygame.font.SysFont('Calibri', 30)
 pygame.display.set_caption("Pew Pew")
 
-# Build the hud
-ClrAccent = (50, 50, 50)
-Hud = pygame.Surface((ScreenX, 95), pygame.SRCALPHA, 32).convert_alpha()
-pygame.draw.rect(Hud, (100, 100, 100), (0, 0, ScreenX, 5))
-pygame.draw.rect(Hud, (80, 80, 80), (0, 5, ScreenX, 10))
-pygame.draw.rect(Hud, ClrAccent, (0, 42, 58, 15))
-pygame.draw.rect(Hud, ClrAccent, (ScreenX, 42, -58, 15))
-for i in range(0, 30):
-	pygame.draw.arc(Hud, ClrAccent, (i / 2, 42 + i / 2, 100 - i, 50 - i), 0, 1.56, 1)
-	pygame.draw.arc(Hud, ClrAccent, (150 + i / 2, 42 + i / 2, 100 - i, 50 - i), 1.57, 3.14, 1)
-pygame.draw.rect(Hud, ClrAccent, (101, 42, 8, 53))
-pygame.draw.rect(Hud, ClrAccent, (141, 42, 8, 53))
 
 # Global variables that are currently undefined
 Particles = []
@@ -432,9 +420,13 @@ def prints(text):
 		print(text)
 
 # Displays given text at the position on screen.
-def textWrite(text, pos, font=FontSmall, color=ClrWhite):
-	global Screen
-	Screen.blit(font.render(text, True, color), pos)
+def textWrite(text, pos, font=FontSmall, color=ClrWhite, Onto=None):
+	if Onto == None:
+		global Screen
+		Screen.blit(font.render(text, True, color), pos)
+	else:
+		Onto.blit(font.render(text, True, color), pos)
+		
 
 # Returns the coordinates of the center of an object that has coords and size attributes.
 def center(obj):
@@ -675,7 +667,59 @@ Upgrades2 = [GunRail2, GunLazer2, GunDrill2, GunShielding2, GunGatling2, GunBomb
 LowTable = lots([3, 3, 3, 3, 3, 3, 3], Upgrades)
 HighTable = lots([3, 3, 3, 3, 3, 3, 3, 3], Upgrades2)
 
-		
+
+
+# Pre-render images for backgrounds and unchanging overlays
+buttonSize = 60
+buttonSpace = 20
+buttonFull = buttonSize + buttonSpace
+cursor = 0
+
+# Main Menu
+OverlayMenu = pygame.Surface((ScreenX, ScreenY))
+OverlayMenu.fill(ClrBlack)
+for i in range(5):
+	pygame.draw.rect(OverlayMenu, ClrAccent, (buttonSpace, (50 + i * buttonFull), 250 - (buttonSpace * 2), buttonSize))
+textWrite("Casual", (30, 60), Onto=OverlayMenu)
+textWrite("Full Job", (30, 60 + buttonFull), Onto=OverlayMenu)
+textWrite("Hard", (30, 60 + buttonFull * 2), Onto=OverlayMenu)
+textWrite("Impossible", (30, 60 + buttonFull * 3), Onto=OverlayMenu)
+textWrite("Test mode", (30, 60 + buttonFull * 4), Onto=OverlayMenu)
+
+# Main Menu Help subsection
+OverlayHelp = pygame.Surface((ScreenX, ScreenY))
+OverlayHelp.fill(ClrBlack)
+textWrite("Pew Pew", [70, 25], Onto=OverlayHelp)
+textWrite("Use left and right arrows to move", [0, 50 + 20], Onto=OverlayHelp)
+textWrite("Up arrow to fire weapons.", [0, 50 + 40], Onto=OverlayHelp)
+textWrite("Collect Poweups to upgrade your ship", [0, 50 + 60], Onto=OverlayHelp)
+OverlayHelp.blit(ImgPowerup, [(ScreenX / 2) - 20, 50 + 80])
+textWrite("Avoid meteors, and especially camps.", [0, 50 + 100], Onto=OverlayHelp)
+OverlayHelp.blit(ImgsetWalls[0], [60, 50 + 120])
+OverlayHelp.blit(ImgsetWalls[4], [200, 50 + 120])
+textWrite("See your stats at bottom of screen.", [0, 50 + 140], Onto=OverlayHelp)
+textWrite("Press an arrow key to select difficulty", [0, 300], Onto=OverlayHelp)
+textWrite("difficulty increases clockwise,", [0, 300 + 16], Onto=OverlayHelp)
+textWrite("from left as easy to down as impossible.", [0, 300 + 32], Onto=OverlayHelp)
+textWrite("And look out for someone at 10000m...", [0, 500], Onto=OverlayHelp)
+
+# In game Hud
+Hud = pygame.Surface((ScreenX, 95), pygame.SRCALPHA, 32).convert_alpha()
+pygame.draw.rect(Hud, (100, 100, 100), (0, 0, ScreenX, 5))
+pygame.draw.rect(Hud, (80, 80, 80), (0, 5, ScreenX, 10))
+pygame.draw.rect(Hud, ClrAccent, (0, 42, 58, 15))
+pygame.draw.rect(Hud, ClrAccent, (ScreenX, 42, -58, 15))
+for i in range(0, 30):
+	pygame.draw.arc(Hud, ClrAccent, (i / 2, 42 + i / 2, 100 - i, 50 - i), 0, 1.56, 1)
+	pygame.draw.arc(Hud, ClrAccent, (150 + i / 2, 42 + i / 2, 100 - i, 50 - i), 1.57, 3.14, 1)
+pygame.draw.rect(Hud, ClrAccent, (101, 42, 8, 53))
+pygame.draw.rect(Hud, ClrAccent, (141, 42, 8, 53))
+
+# Frontal Icons layer
+Frontal = pygame.Surface((ScreenX, ScreenY), pygame.SRCALPHA, 32).convert_alpha()
+
+
+
 # Fires the player's currently equipped gun.
 def shoot():
 	global PlayerShip
@@ -815,50 +859,77 @@ print("pewpew version 0.3.1")
 Looping = True
 while Looping:
 	Running = True
+	redraw = True
+	Menu = "title"
 	# Mode selection screen loop
 	while Running:
-		Screen.fill(ClrBlack)
-		textWrite("Pew Pew", [70, 25])
-		textWrite("Use left and right arrows to move", [0, 50 + 20])
-		textWrite("Up arrow to fire weapons.", [0, 50 + 40])
-		textWrite("Collect Poweups to upgrade your ship", [0, 50 + 60])
-		Screen.blit(ImgPowerup, [(ScreenX / 2) - 20, 50 + 80])
-		textWrite("Avoid meteors, and especially camps.", [0, 50 + 100])
-		Screen.blit(ImgsetWalls[0], [60, 50 + 120])
-		Screen.blit(ImgsetWalls[4], [200, 50 + 120])
-		textWrite("See your stats at bottom of screen.", [0, 50 + 140])
-		textWrite("Press an arrow key to select difficulty", [0, 300])
-		textWrite("difficulty increases clockwise,", [0, 300 + 16])
-		textWrite("from left as easy to down as impossible.", [0, 300 + 32])
-		textWrite("And look out for someone at 10000m...", [0, 500])
-		
+		keyLeft = False
+		keyRight = False
+		keyUp = False
+		keyDown = False
+		keyExtra = False
+
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				Running = False
 				Looping = False
 			if event.type == pygame.KEYDOWN:
+				redraw = True
 				# Difficulty selectors
 				if event.key == K_LEFT:
+					keyLeft = True
+				if event.key == K_UP:
+					keyUp = True
+				if event.key == K_RIGHT:
+					keyRight = True
+				if event.key == K_DOWN:
+					keyDown = True
+				if event.key == K_t:
+					keyExtra = True
+
+		if redraw:
+			Frontal.fill((0, 0, 0, 0))
+
+		if Menu == "title":
+			Screen.blit(OverlayMenu, (0, 0))
+
+			if keyUp:
+				cursor -= 1
+				cursor %= 6
+			if keyDown:
+				cursor += 1
+				cursor %= 6
+			
+			if redraw:
+				Frontal.blit(ImgProjBomb, (buttonSpace, 50 + cursor * buttonFull))
+				Frontal.blit(ImgProjBomb, (ScreenX - buttonSpace, 50 + cursor * buttonFull + buttonSize))
+
+			if keyLeft or keyRight or keyExtra:
+				if cursor == 0:
 					Running = False
 					# 18:1
 					Multiplier = multipliers(0, 1, 1.5, 1, 28, 1) 
-				if event.key == K_UP:
+				if cursor == 1:
 					Running = False
 					# 14:1
-					Multiplier = multipliers(1, 2, 2, 2, 20, 2) 
-				if event.key == K_RIGHT:
+					Multiplier = multipliers(1, 2, 2, 2, 20, 2)
+				if cursor == 2:
 					Running = False
 					# 25:1
 					Multiplier = multipliers(2, 3.5, 3, 2, 10, 4) 
-				if event.key == K_DOWN:
+				if cursor == 3:
 					Running = False
 					# 12.5:1
 					Multiplier = multipliers(3, 40, 5, 5, 8, 10) 
-				if event.key == K_t:
+				if cursor == 4:
 					Running = False
 					Multiplier = multipliers(4, 2, 2, 2, 50, 1)
+				#if cursor = 5:
+			
+		Screen.blit(Frontal, (0, 0))
 		pygame.display.update()
 		Clock.tick(60)
+		redraw = False
 
 	# Main variable resetting
 	Screen.fill(ClrBlack)
