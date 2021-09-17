@@ -604,6 +604,33 @@ class timers(object):
 		self.neardead = 0.0
 		self.ticks = 0
 
+# Base class for the weighted table system
+class lots(object):
+	def __init__(self, weightlist, guns):
+		self.items = guns
+		self.weights = weightlist
+		self.netsum = 0
+		self.count = 0
+		for i in self.weights:
+			self.netsum += i
+			self.count += 1
+
+	# Returns an item from the table
+	def getItem(self, cap = 0):
+		randval = random.randint(0, self.netsum - sum(self.weights[(self.count - cap):self.count]))
+		for i in range(0, self.count - cap):
+			randval -= self.weights[i]
+			if randval <= 0:
+				return self.items[i]
+
+	# Adds and subtracts from the weightlist
+	def alter(self, itempos, modval):
+		prev = self.weights[itempos]
+		if prev + modval >= 0:
+			self.weights[itempos] += modval
+			self.netsum += modval
+	
+
 GunBase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, ImgProjDefault)
 GunRail = gun("Railgun", 1, 2, 10, (2, 10), 10, 10, 25, 28, ImgProjRailgun)
 GunRail2 = gun("Scientific", -2, 2000, 2, (30, 30), 50, 10, 30, 60, ImgProjHyper)
@@ -642,9 +669,11 @@ GunDefender = gun("Defender", 2, 20, 1, (20, 10), 1, 3, 1, 50, ImgProjShield)
 GunReducer = gun("Reducer", 1, 10000, 1, (ScreenX * 2, ScreenY), 1, ScreenY, 1, 1, ImgBackground)
 GunReducer.setBonus(True, 1, False)
 
-Upgrades = [GunRail, GunLazer, GunDrill, GunShielding, GunGatling, GunWall, GunBomb]
-Upgrades2 = [GunRail2, GunLazer2, GunDrill2, GunShielding2, GunGatling2, GunDefender, GunBomb2, GunReducer]
+Upgrades = [GunRail, GunLazer, GunDrill, GunShielding, GunGatling, GunBomb, GunWall]
+Upgrades2 = [GunRail2, GunLazer2, GunDrill2, GunShielding2, GunGatling2, GunBomb2, GunReducer, GunDefender]
 
+LowTable = lots([3, 3, 3, 3, 3, 3, 3], Upgrades)
+HighTable = lots([3, 3, 3, 3, 3, 3, 3, 3], Upgrades2)
 
 		
 # Fires the player's currently equipped gun.
@@ -1253,23 +1282,25 @@ while Looping:
 				i.coords = (i.coords[0], i.coords[1] + 2)
 				if collide(i.coords, i.size, PlayerShip.coords, PlayerShip.size):
 					Powerups.remove(i)
-					upgradeIndex = random.randint(0, len(Upgrades) - 1)
+
 					crit = PlayerShip.hp * (Multiplier.difficulty + 0.5) + RecentDamage
-					print ("       " + str(crit))
-					if random.randint(30, 400) <= crit:
-						if crit > 400 and random.randint(400, 1000) < crit:
-							equip(GunLazer3)
+					randVal = random.random() + (crit / 400)
+					print ("        damage " + str(RecentDamage) + " is crit " + str(crit) + " is mod " + str(crit / 400) + " for randval " + str(randVal))
+
+					# Player is doing too well
+					if randVal > 2.0:
+						equip(GunLazer3)
+					# Player is doing well
+					elif randVal > 1.02:
+						if HasDefender:
+							equip(HighTable.getItem(1))
 						else:
-							if upgradeIndex == 5:
-								if HasDefender:
-									equip(GunWall)
-								else:
-									equip(GunDefender)
-									HasDefender = True
-							else:
-								equip(Upgrades2[upgradeIndex])
+							equip(HighTable.getItem())
+							if PlayerShip.gun.id == "Defender":
+								HasDefender = True
 					else:
-						equip(Upgrades[upgradeIndex])
+						equip(LowTable.getItem())
+
 					break
 				else:
 					Screen.blit(i.pic, i.coords)
