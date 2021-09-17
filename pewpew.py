@@ -488,14 +488,16 @@ class proj(object):
 		self.id = None
 		self.crit = 0
 		self.counts = True
+		self.regen = False
 
 	# Created to reduce arguments in default constructor. Must be called.
-	def complete(self, damage, pic, id, crit, counts):
+	def complete(self, damage, pic, id, crit, counts, Regen):
 		self.dmg = damage
 		self.pic = pic
 		self.id = id
 		self.crit = crit
 		self.counts = counts
+		self.regen = Regen
 
 # Base class for guns the player can equip.
 class gun(object):
@@ -517,6 +519,7 @@ class gun(object):
 		self.crit = 1
 		# If this weapon counts against bullet efficiency
 		self.screenCount = True
+		self.regen = False
 
 	# Sets extra data that is consistent for most guns. Created to reduce constructor length.
 	def setBonus(self, ban, crit = 1, counts = True):
@@ -524,11 +527,19 @@ class gun(object):
 		self.crit = crit
 		self.screenCount = counts;
 
+	def statMods(self, dmgmod = 0, hpmodder = 0, ammomod = 0, cooldownmod = 0, hpmod = 0, toRegen = False):
+		self.dmg += dmgmod
+		self.hpmod += hpmodder
+		self.maxfires += ammomod
+		self.cooldown += cooldownmod
+		self.hp += hpmod
+		self.regen = toRegen
+
 	# Returns a new projectile object corresponding to the gun.
 	def makeProj(self, shipCoords):
 		global PlayerShip
 		newProj = proj(self.hp, (PlayerShip.coords[0] + (PlayerShip.size[0] / 2) - (PlayerShip.gun.size[0] / 2), PlayerShip.coords[1] - 1), self.size, self.speed, self.move)
-		newProj.complete(self.dmg, self.pic, self.id, self.crit, self.screenCount)
+		newProj.complete(self.dmg, self.pic, self.id, self.crit, self.screenCount, self.regen)
 		return newProj
 		
 # Base class for powerups the player picks up.
@@ -591,6 +602,7 @@ class timers(object):
 		self.bossatk = 300
 		self.powerup = 400
 		self.neardead = 0.0
+		self.ticks = 0
 
 GunBase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, ImgProjDefault)
 GunRail = gun("Railgun", 1, 2, 10, (2, 10), 10, 10, 25, 28, ImgProjRailgun)
@@ -619,6 +631,13 @@ GunOP = gun("God gun", 50, 100, 1000, (50, 5), 6, 2, 30, 0, ImgProjShield2)
 GunWall = gun("Wall Placer", 1, 56, 1, (50, 20), 1, 5, 1, 50, ImgProjShield2)
 GunWall.setBonus(False, 0.5)
 GunDefender = gun("Defender", 2, 20, 1, (20, 10), 1, 3, 1, 50, ImgProjShield)
+
+#GunDrill2.statMods(toRegen = True)
+#GunShielding.statMods(toRegen = True)
+#GunShielding2.statMods(toRegen = True)
+#GunWall.statMods(toRegen = True)
+#GunDefender.statMods(toRegen = True)
+#GunBomb2.statMods(toRegen = True)
 
 GunReducer = gun("Reducer", 1, 10000, 1, (ScreenX * 2, ScreenY), 1, ScreenY, 1, 1, ImgBackground)
 GunReducer.setBonus(True, 1, False)
@@ -898,6 +917,7 @@ while Looping:
 			Screen.blit(ImgBackground, (0, Timer.backdrop))
 					
 		Timer.time += Multiplier.time
+		Timer.ticks += 1
 
 		if Timer.time == BossSpawnTime:
 			Boss.on = 1
@@ -983,6 +1003,10 @@ while Looping:
 							x.hp -= i.dmg
 							i.hp -= x.dmg
 							prints("Boolet: " + str(i.hp))
+							if i.id == "Wall Placer":
+								metCenter = center(x)
+								pygame.draw.line(Screen, (180, 0, 0), (i.coords[0] + 5, i.coords[1] + 1), metCenter, 2)
+								pygame.draw.line(Screen, (180, 0, 0), (i.coords[0] + 45, i.coords[1] + 1), metCenter, 2)
 							if i.hp <= 0:
 								Screen.blit(i.pic, i.coords)
 								ProjAlive = False
@@ -1019,6 +1043,9 @@ while Looping:
 					else:
 						break
 						
+				if i.regen and i.hp < i.basehp and Timer.ticks % (4 + (i.basehp / 4)) == 0:
+					i.hp += 1
+					print (i.id, " Regen")
 				# Projectile ID specific operations
 				if i.id in ["Wall Placer", "Defender"]:
 					# Draw hp lines and regenerate health
@@ -1308,12 +1335,12 @@ while Looping:
 				pygame.draw.line(Screen, (255, 0, 0), (0, ScreenY - 55), (100, ScreenY - 55), 1)
 				pygame.draw.line(Screen, (255, 0, 0), (100, ScreenY - 55), (100, ScreenY - 33), 1)
 				color = (max(225 * fireratio, 0), max(225 - (225 * fireratio), 0), 0)
-				pygame.draw.rect(Screen, color, (0, ScreenY - 56, 100 - int(fireratio * 100), 16))
-				pygame.draw.rect(Screen, color, (250, ScreenY - 56, -100 + int(fireratio * 100), 16))
+				pygame.draw.rect(Screen, color, (0, ScreenY - 56, 101 - int(fireratio * 100), 16))
+				pygame.draw.rect(Screen, color, (150 + int(fireratio * 100), ScreenY - 56, 101 - int(fireratio * 100), 16))
 				# Extra bright when ready to fire
 				if fireratio <= 0.1: 
-					pygame.draw.rect(Screen, (0, 255, 0), (90, ScreenY - 40, 10 - (fireratio * 100), 7))
-					pygame.draw.rect(Screen, (0, 255, 0), (160, ScreenY - 40, -(10 - (fireratio * 100)), 7))
+					pygame.draw.rect(Screen, (0, 255, 0), (90, ScreenY - 40, 11 - int(fireratio * 100), 7))
+					pygame.draw.rect(Screen, (0, 255, 0), (150 + int(fireratio * 100), ScreenY - 40, 11 - int(fireratio * 100), 7))
 			else:
 				# No cooldown weapons
 				pygame.draw.rect(Screen, (0, 255, 0), (0, ScreenY - 56, 100, 15))
