@@ -534,6 +534,22 @@ class gun(object):
 		newProj.complete(self.dmg, self.pic, self.id, self.crit, self.screenCount, self.regen)
 		return newProj
 		
+# Base class to store spending info and results for a stat
+class Statmod(object):
+	def __init__(self, increment, lowmax, highmax):
+		self.inc = increment
+		self.min = lowmax
+		self.max = highmax
+		self.value = 0
+
+# Stores side information about a gun that is only required in pre-game
+class Gunmod(object):
+	def __init__(self, name, mods={}):
+		self.id = name
+		#self.frequency = 3
+		self.statmods = mods
+		self.netDots = 0
+
 # Base class for powerups the player picks up.
 class powerup(object):
 	def __init__(self, coords, interval):
@@ -618,38 +634,55 @@ class lots(object):
 	# Adds and subtracts from the weightlist
 	def alter(self, itempos, modval):
 		prev = self.weights[itempos]
-		if prev + modval >= 0:
+		if prev + modval > 0 and prev + modval < 6:
 			self.weights[itempos] += modval
 			self.netsum += modval
 	
 
 GunBase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, ImgProjDefault)
 GunRail = gun("Railgun", 1, 2, 10, (2, 10), 10, 10, 25, 28, ImgProjRailgun)
+ModRail = Gunmod("Railgun")
 GunRail2 = gun("Scientific", -2, 2000, 2, (30, 30), 50, 10, 30, 60, ImgProjHyper)
 GunRail2.setBonus(True, 1, False)
+ModRail2 = Gunmod("Scientific")
 #gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, ImgProjLazer) #Time dialator
 GunLazer = gun("Laser Beam", 0, 1, 220, (2, 10), 50, 10, 0.5, -1, ImgProjLight)
+ModLazer = Gunmod("Laser Beam")
 GunLazer2 = gun("Decimator", -1, 1, 220, (4, 10), 50, 10, 1, -1, ImgProjLight)
+ModLazer2 = Gunmod("Decimator")
 GunLazer3 = gun("Ender", -50, 200, 300, (20, 500), 1, 500, 1, -1, ImgProjHyper)
 GunLazer3.setBonus(True, 0.25, False)
 GunBomb = gun("Bomb Launcher", 2, 4, 6, (4, 4), 2, 1, 1, 30, ImgProjBomb)
 GunBomb.setBonus(True, 0.8)
+ModBomb = Gunmod("Bomb Launcher")
 GunBomb2 = gun("Nuclear Charge", 2, 4, 1, (4, 4), 1, 2, 1, 30, ImgProjBomb)
 GunBomb2.setBonus(False, 0.8)
+ModBomb2 = Gunmod("Nuclear Charge")
 
 GunDrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, ImgProjDrill)
+ModDrill = Gunmod("Drill Launcher")
 GunDrill2 = gun("Excavator", 3, 200, 1, (30, 30), 1, 1, 1, 40, ImgProjExcavator)
 GunDrill2.setBonus(False, 1, False)
+ModDrill2 = Gunmod("Excavator")
 GunShielding = gun("Shield Thrower", 10, 20, 1, (20, 5), 1, 1, 1, 50, ImgProjShield)
+ModShielding = Gunmod("Shield Thrower")
 GunShielding2 = gun("Shielding", 20, 10, 1, (20, 5), 1, 1, 1, 50, ImgProjShield)
+ModShielding2 = Gunmod("Shielding")
 GunGatling = gun("Tommy Gun", 2, 1, 80, (2, 2), 4, 3, 2, 15, ImgProjDefault)
 GunGatling.setBonus(True, 6)
+ModGatling = Gunmod("Tommy Gun")
 GunGatling2 = gun("Gatling", 2, 1, 200, (2, 4), 3, 5, 2, 10, ImgProjDefault)
 GunGatling2.setBonus(False, 8)
+ModGatling2 = Gunmod("Gatling")
 GunOP = gun("God gun", 50, 100, 1000, (50, 5), 6, 2, 30, 0, ImgProjShield2)
 GunWall = gun("Wall Placer", 1, 56, 1, (50, 20), 1, 5, 1, 50, ImgProjShield2)
 GunWall.setBonus(False, 0.5)
+ModWall = Gunmod("Wall Placer")
 GunDefender = gun("Defender", 2, 20, 1, (20, 10), 1, 3, 1, 50, ImgProjShield)
+ModDefender = Gunmod("Defender")
+GunReducer = gun("Reducer", 1, 10000, 1, (ScreenX * 2, ScreenY), 1, ScreenY, 1, 1, ImgBackground)
+GunReducer.setBonus(True, 1, False)
+ModReducer = Gunmod("Reducer")
 
 #GunDrill2.statMods(toRegen = True)
 #GunShielding.statMods(toRegen = True)
@@ -658,11 +691,11 @@ GunDefender = gun("Defender", 2, 20, 1, (20, 10), 1, 3, 1, 50, ImgProjShield)
 #GunDefender.statMods(toRegen = True)
 #GunBomb2.statMods(toRegen = True)
 
-GunReducer = gun("Reducer", 1, 10000, 1, (ScreenX * 2, ScreenY), 1, ScreenY, 1, 1, ImgBackground)
-GunReducer.setBonus(True, 1, False)
 
 Upgrades = [GunRail, GunLazer, GunDrill, GunShielding, GunGatling, GunBomb, GunWall]
+Mods = [ModRail, ModLazer, ModDrill, ModShielding, ModGatling, ModBomb, ModWall] #?
 Upgrades2 = [GunRail2, GunLazer2, GunDrill2, GunShielding2, GunGatling2, GunBomb2, GunReducer, GunDefender]
+Mods2 = [ModRail2, ModLazer2, ModDrill2, ModShielding2, ModGatling2, ModBomb2, ModReducer, ModDefender]
 
 LowTable = lots([3, 3, 3, 3, 3, 3, 3], Upgrades)
 HighTable = lots([3, 3, 3, 3, 3, 3, 3, 3], Upgrades2)
@@ -678,13 +711,14 @@ cursor = 0
 # Main Menu
 OverlayMenu = pygame.Surface((ScreenX, ScreenY))
 OverlayMenu.fill(ClrBlack)
-for i in range(5):
+for i in range(6):
 	pygame.draw.rect(OverlayMenu, ClrAccent, (buttonSpace, (50 + i * buttonFull), 250 - (buttonSpace * 2), buttonSize))
 textWrite("Casual", (30, 60), Onto=OverlayMenu)
 textWrite("Full Job", (30, 60 + buttonFull), Onto=OverlayMenu)
 textWrite("Hard", (30, 60 + buttonFull * 2), Onto=OverlayMenu)
 textWrite("Impossible", (30, 60 + buttonFull * 3), Onto=OverlayMenu)
 textWrite("Test mode", (30, 60 + buttonFull * 4), Onto=OverlayMenu)
+textWrite("Modifications", (30, 60 + buttonFull * 5), Onto=OverlayMenu)
 
 # Main Menu Help subsection
 OverlayHelp = pygame.Surface((ScreenX, ScreenY))
@@ -714,6 +748,21 @@ for i in range(0, 30):
 	pygame.draw.arc(Hud, ClrAccent, (150 + i / 2, 42 + i / 2, 100 - i, 50 - i), 1.57, 3.14, 1)
 pygame.draw.rect(Hud, ClrAccent, (101, 42, 8, 53))
 pygame.draw.rect(Hud, ClrAccent, (141, 42, 8, 53))
+
+# Weapons Menu
+OverlayWeps = pygame.Surface((ScreenX, ScreenY))
+OverlayWeps.fill(ClrBlack)
+OverlayWeps.blit(ImgPowerup, (220, 10))
+pygame.draw.rect(OverlayWeps, ClrAccent, (10, 10, 50, 20))
+
+# Weapons scroll cutter
+OverlayCutter = pygame.Surface((230, 590))
+OverlayCutter.fill(ClrGreen)
+
+# Weapons internal scroller
+OverlayGuts = pygame.Surface((240, 1000))
+OverlayGuts.fill(ClrAccent)
+
 
 # Frontal Icons layer
 Frontal = pygame.Surface((ScreenX, ScreenY), pygame.SRCALPHA, 32).convert_alpha()
@@ -859,7 +908,8 @@ print("pewpew version 0.3.1")
 Looping = True
 while Looping:
 	Running = True
-	redraw = True
+	redraw = 1
+	scrollOffset = 0
 	Menu = "title"
 	# Mode selection screen loop
 	while Running:
@@ -874,7 +924,7 @@ while Looping:
 				Running = False
 				Looping = False
 			if event.type == pygame.KEYDOWN:
-				redraw = True
+				redraw = 1
 				# Difficulty selectors
 				if event.key == K_LEFT:
 					keyLeft = True
@@ -900,7 +950,7 @@ while Looping:
 				cursor += 1
 				cursor %= 6
 			
-			if redraw:
+			if redraw > 0:
 				Frontal.blit(ImgProjBomb, (buttonSpace, 50 + cursor * buttonFull))
 				Frontal.blit(ImgProjBomb, (ScreenX - buttonSpace, 50 + cursor * buttonFull + buttonSize))
 
@@ -924,18 +974,118 @@ while Looping:
 				if cursor == 4:
 					Running = False
 					Multiplier = multipliers(4, 2, 2, 2, 50, 1)
-				#if cursor = 5:
+				if cursor == 5:
+					Menu = "guns"
+					cursor = 0
+					redraw = 3
+
+		elif Menu == "guns":
+		
+			if keyUp:
+				cursor -= 1
+				cursor %= 16
+			if keyDown:
+				cursor += 1
+				cursor %= 16
 			
+			if keyLeft:
+				if cursor > 7:
+					HighTable.alter(cursor - 8, -1)
+				elif cursor > 0:
+					LowTable.alter(cursor - 1, -1)
+				else:
+					Menu = "title"
+					cursor = 5
+					redraw = 3
+			if keyRight:
+				if cursor > 7:
+					HighTable.alter(cursor - 8, 1)
+				elif cursor > 0:
+					LowTable.alter(cursor - 1, 1)
+				else:
+					Menu = "title"
+					cursor = 5
+					redraw = 3
+
+			if redraw > 1:
+				# Scroller
+				verCount = 0
+				for i in range(len(Upgrades)):
+					yoffset = verCount * (buttonSize + 2)
+					pygame.draw.rect(OverlayGuts, (100, 100, 100), (2, 2 + yoffset, 230 - 4, buttonSize))
+					OverlayGuts.blit(ImgPowerup, (4, 4 + yoffset))
+					textWrite(Upgrades[i].id, (40, 4 + yoffset), Onto=OverlayGuts)
+					verCount += 1
+				for i in range(len(Upgrades2)):
+					yoffset = verCount * (buttonSize + 2)
+					pygame.draw.rect(OverlayGuts, (120, 100, 100), (2, 2 + yoffset, 230 - 4, buttonSize))
+					OverlayGuts.blit(ImgPowerup, (4, 4 + yoffset))
+					textWrite(Upgrades2[i].id, (40, 4 + yoffset), Onto=OverlayGuts)
+					verCount += 1
+
+			if redraw > 0:
+				# Select icon
+				if cursor > 0:
+					# if the top is above the cutoff point
+					if (cursor - 1) * (buttonSize + 2) + scrollOffset < 0:
+						scrollOffset = -1 * (2 + buttonSize) * (cursor - 1)
+					# if the bottom is below the cutoff point
+					if buttonSize + (cursor - 1) * (buttonSize + 2) + scrollOffset > 590:
+						scrollOffset = -1 * ((cursor) * (buttonSize + 2) - 590)
+						
+
+					Frontal.blit(ImgProjBomb, (12, 52 + (cursor - 1) * (buttonSize + 2) + scrollOffset))
+					Frontal.blit(ImgProjBomb, (ScreenX - 12, 52 + buttonSize + (cursor - 1) * (buttonSize + 2) + scrollOffset))
+				else:
+					Frontal.blit(ImgProjBomb, (10, 10))
+					Frontal.blit(ImgProjBomb, (60, 30))
+					
+				print(" Cursor: " + str(cursor) + "  offset: " + str(scrollOffset) + "  relative offset of cursor: " + str((cursor - 1) * (buttonSize + 2)))
+				
+				# Frequency display
+				pygame.draw.rect(Frontal, (100, 100, 100), (1, 50, 8, 590))
+				verCount = 0
+				for i in range(LowTable.count):
+					if i == cursor - 1:
+						pygame.draw.rect(Frontal, (200, 200, 200), (0, verCount * 590 / LowTable.netsum + 49, 10, (LowTable.weights[i] * 590 / LowTable.netsum) + 2))
+					verCount += LowTable.weights[i]
+					ypos = verCount * 590 / LowTable.netsum + 50
+					pygame.draw.line(Frontal, (0, 0, 0), (1, ypos), (9, ypos)) 
+
+						
+
+				pygame.draw.rect(Frontal, (120, 100, 100), (241, 50, 8, 590))
+				verCount = 0
+				for i in range(HighTable.count):
+					if i == cursor - 8:
+						pygame.draw.rect(Frontal, (200, 200, 200), (240, verCount * 590 / HighTable.netsum + 49, 10, (HighTable.weights[i] * 590 / HighTable.netsum) + 2))
+					verCount += HighTable.weights[i]
+					ypos = verCount * 590 / HighTable.netsum + 50
+					pygame.draw.line(Frontal, (0, 0, 0), (241, ypos), (249, ypos))
+				# Selected low tier
+				if cursor > 0 and cursor < 8:
+					pass
+				# Selected High tier
+				if cursor > 7:
+					pass
+
+			Screen.blit(OverlayWeps, (0, 0))
+			OverlayCutter.blit(OverlayGuts, (0, scrollOffset))
+			Screen.blit(OverlayCutter, (10, 50))
+
+
 		Screen.blit(Frontal, (0, 0))
 		pygame.display.update()
 		Clock.tick(60)
-		redraw = False
+		if redraw > 0:
+			redraw -= 1
 
 	# Main variable resetting
 	Screen.fill(ClrBlack)
 	Line(Screen, ClrGreen, (0, 0), (600, 600), 3)
 	pygame.display.update()
 	print("updated screen")
+	
 
 	Particles = []
 	Projectiles = []
