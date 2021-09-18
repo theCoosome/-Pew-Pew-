@@ -671,7 +671,7 @@ ModShielding2 = Gunmod("Shielding")
 GunGatling = gun("Tommy Gun", 2, 1, 80, (2, 2), 4, 3, 2, 15, ImgProjDefault)
 GunGatling.setBonus(True, 6)
 ModGatling = Gunmod("Tommy Gun")
-GunGatling2 = gun("Gatling", 2, 1, 200, (2, 4), 3, 5, 2, 10, ImgProjDefault)
+GunGatling2 = gun("Gatling", 2, 1, 75, (2, 4), 3, 5, 2, 10, ImgProjDefault)
 GunGatling2.setBonus(False, 8)
 ModGatling2 = Gunmod("Gatling")
 GunOP = gun("God gun", 50, 100, 1000, (50, 5), 6, 2, 30, 0, ImgProjShield2)
@@ -970,7 +970,7 @@ while Looping:
 				if cursor == 3:
 					Running = False
 					# 12.5:1
-					Multiplier = multipliers(3, 40, 5, 5, 8, 10) 
+					Multiplier = multipliers(3, 40, 5, 4, 8, 1) 
 				if cursor == 4:
 					Running = False
 					Multiplier = multipliers(4, 2, 2, 2, 50, 1)
@@ -1439,7 +1439,7 @@ while Looping:
 					OP = True
 					print("Opped.")
 				if OP:
-					if event.key == K_p:
+					if event.key == K_p or event.key == K_KP0:
 						pause = True
 						while pause:
 							for subevent in pygame.event.get():
@@ -1448,8 +1448,7 @@ while Looping:
 									Looping = False
 									pause = False
 								if subevent.type == pygame.KEYDOWN:
-									if subevent.key == K_p:
-										pause = False
+									pause = False
 							Clock.tick(30)
 
 					if event.key == K_EQUALS:
@@ -1509,10 +1508,10 @@ while Looping:
 					print ("        damage " + str(RecentDamage) + " is crit " + str(crit) + " is mod " + str(crit / 400) + " for randval " + str(randVal))
 
 					# Player is doing too well
-					if randVal > 2.0:
+					if randVal > 3.0:
 						equip(GunLazer3)
 					# Player is doing well
-					elif randVal > 1.02:
+					elif randVal > 1.1:
 						if HasDefender:
 							equip(HighTable.getItem(1))
 						else:
