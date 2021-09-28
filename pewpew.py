@@ -401,6 +401,7 @@ ImgPlayerDamaged = pygame.image.load('imgs/damagepew.png')
 ImgUpgrade = pygame.image.load('imgs/powerup.png')
 
 ImgDot = FontSmall.render("0", True, (0, 0, 0))
+ImgDselected = FontSmall.render("0", True, (250, 250, 250))
 ImgLarrow = FontSmall.render("<", True, (0, 0, 0))
 ImgRarrow = FontSmall.render(">", True, (0, 0, 0))
 
@@ -450,18 +451,19 @@ def costsImage(gun, gunmod):
 
 	for i in gunmod.statmods:
 		# Title
-		textWrite(i, (30, yoffset + 2), Onto=overlay)
+		textWrite(i[0], (30, yoffset + 2), Onto=overlay)
 		overlay.blit(ImgLarrow, (20, yoffset + 20))
-		xoffset = 15
+		xoffset = 35
 		# Lower dots
-		for x in range(max(-(gunmod.statmods[i].min + 1), 0)):
+		for x in range(max(-(i[1].min + 1), 0)):
 			overlay.blit(ImgDot, (xoffset, yoffset + 20))
 			xoffset += 15
 		# Defualt position dot
-		overlay.blit(ImgDot, (xoffset, yoffset + 15))
-		xoffset += 15
+		if i[1].min < 0:
+			overlay.blit(ImgDot, (xoffset, yoffset + 15))
+			xoffset += 15
 		# Upper dots
-		for x in range(gunmod.statmods[i].max):
+		for x in range(i[1].max):
 			overlay.blit(ImgDot, (xoffset, yoffset + 20))
 			xoffset += 15
 		overlay.blit(ImgRarrow, (xoffset, yoffset + 20))
@@ -470,8 +472,14 @@ def costsImage(gun, gunmod):
 	return overlay
 
 # Draws the dots and stat values onto the frontal overlay.
-def costOverlay(gunmod, frontal):
-	textWrite(gunmod.netDots, (180, 20), Onto=frontal)
+def costOverlay(gun, gunmod, frontal):
+	textWrite(str(gunmod.netDots), (180, 20), Onto=frontal)
+	yoffset = 50
+	for i in gunmod.statmods:
+		textWrite(str(i[1].inc * i[1].value), (90, yoffset + 2), Onto=frontal)
+		for x in range(i[1].value - i[1].min):
+			frontal.blit(ImgDselected, (35 + (x * 15), yoffset + 20))
+		yoffset += 40
 	return frontal
 
 # CLASSES
@@ -573,15 +581,15 @@ class gun(object):
 		
 # Base class to store spending info and results for a stat
 class Statmod(object):
-	def __init__(self, increment, lowmax, highmax):
+	def __init__(self, increment, lowmax, highmax, default=0):
 		self.inc = increment
 		self.min = lowmax
 		self.max = highmax
-		self.value = 0
+		self.value = default
 
 # Stores side information about a gun that is only required in pre-game
 class Gunmod(object):
-	def __init__(self, name, mods={}):
+	def __init__(self, name, mods=[]):
 		self.id = name
 		#self.frequency = 3
 		self.statmods = mods
@@ -678,23 +686,23 @@ class lots(object):
 
 GunBase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, ImgProjDefault)
 GunRail = gun("Railgun", 1, 2, 10, (2, 10), 10, 10, 25, 28, ImgProjRailgun)
-ModRail = Gunmod("Railgun")
+ModRail = Gunmod("Railgun", [["Ammo", Statmod(5, -1, 1)], ["Damage", Statmod(15, -1, 3)], ["Cooldown", Statmod(-10, -2, 2)]])
 GunRail2 = gun("Scientific", -2, 2000, 2, (30, 30), 50, 10, 30, 60, ImgProjHyper)
 GunRail2.setBonus(True, 1, False)
-ModRail2 = Gunmod("Scientific")
+ModRail2 = Gunmod("Scientific", [["Ammo", Statmod(1, -1, 0)], ["Damage", Statmod(20, -1, 2)], ["Cooldown", Statmod(-18, -2, 2)]])
 #gunlazer = gun("Lazer Beam", 1, 1, 50, (2, 4), 5, 2, 1, 0, ImgProjLazer) #Time dialator
 GunLazer = gun("Laser Beam", 0, 1, 220, (2, 10), 50, 10, 0.5, -1, ImgProjLight)
-ModLazer = Gunmod("Laser Beam")
+ModLazer = Gunmod("Laser Beam", [["Ammo", Statmod(60, -2, 2)], ["Damage", Statmod(0.5, -1, 3)]])
 GunLazer2 = gun("Decimator", -1, 1, 220, (4, 10), 50, 10, 1, -1, ImgProjLight)
-ModLazer2 = Gunmod("Decimator")
+ModLazer2 = Gunmod("Decimator", [["HPmod", Statmod(1, -2, 1)], ["Ammo", Statmod(60, -2, 1)], ["Damage", Statmod(0.5, -1, 2)]])
 GunLazer3 = gun("Ender", -50, 200, 300, (20, 500), 1, 500, 1, -1, ImgProjHyper)
 GunLazer3.setBonus(True, 0.25, False)
 GunBomb = gun("Bomb Launcher", 2, 4, 6, (4, 4), 2, 1, 1, 30, ImgProjBomb)
 GunBomb.setBonus(True, 0.8)
-ModBomb = Gunmod("Bomb Launcher")
+ModBomb = Gunmod("Bomb Launcher", [["HPmod", Statmod(1, -1, 1)], ["Ammo", Statmod(3, -1, 2)], ["Regen", Statmod(1, 0, 1)], ["Cooldown", Statmod(-18, -2, 1)]])
 GunBomb2 = gun("Nuclear Charge", 2, 4, 1, (4, 4), 1, 2, 1, 30, ImgProjBomb)
 GunBomb2.setBonus(False, 0.8)
-ModBomb2 = Gunmod("Nuclear Charge")
+ModBomb2 = Gunmod("Nuclear Charge", [["Regen", Statmod(1, 0, 1)]])
 
 GunDrill = gun("Drill Launcher", 2, 15, 5, (6, 10), 2, 1, 5, 40, ImgProjDrill)
 ModDrill = Gunmod("Drill Launcher")
@@ -1142,12 +1150,19 @@ while Looping:
 				cursor += 1
 				cursor %= len(curMod.statmods) + 1
 
+			# Dot allocation
 			if keyLeft:
 				if cursor > 0:
-					pass # change the dot allocation
+					if curMod.statmods[cursor - 1][1].value > curMod.statmods[cursor - 1][1].min:
+						curMod.statmods[cursor - 1][1].value -= 1
+						curMod.netDots += 1
 			if keyRight:
 				if cursor > 0:
-					pass # change the dot allocation
+					if curMod.statmods[cursor - 1][1].value < curMod.statmods[cursor - 1][1].max and curMod.netDots > 0:
+						curMod.statmods[cursor - 1][1].value += 1
+						curMod.netDots -= 1
+
+			# Back button
 			if ((keyLeft or keyRight) and cursor == 0) or keyExtra:
 				Menu = "guns"
 				cursor = modindex
@@ -1156,6 +1171,7 @@ while Looping:
 			if redraw > 0:
 				Frontal.blit(ImgProjBomb, (buttonSpace, 50 + cursor * buttonFull))
 				Frontal.blit(ImgProjBomb, (ScreenX - buttonSpace, 50 + cursor * buttonFull + buttonSize))
+				Frontal = costOverlay(curGun, curMod, Frontal)
 
 			if redraw > 1:
 				OverlayMods = costsImage(curGun, curMod)
