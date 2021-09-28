@@ -400,6 +400,10 @@ ImgPlayer = pygame.image.load('imgs/pewpewship.png')
 ImgPlayerDamaged = pygame.image.load('imgs/damagepew.png')
 ImgUpgrade = pygame.image.load('imgs/powerup.png')
 
+ImgDot = FontSmall.render("0", True, (0, 0, 0))
+ImgLarrow = FontSmall.render("<", True, (0, 0, 0))
+ImgRarrow = FontSmall.render(">", True, (0, 0, 0))
+
 # Returns a list of quant images from the animation folder with the given name.
 def getImgset(name, quant):
 	images = []
@@ -436,6 +440,39 @@ def center(obj):
 def collide(p1, p2, p3, p4):
 	if p1[1] + p2[1] > p3[1] and p1[1] < p3[1] + p4[1] and p1[0] + p2[0] > p3[0] and p1[0] < p3[0] + p4[0]:
 			return True
+
+# Creates an image background for a gun's mods.
+def costsImage(gun, gunmod):
+	overlay = pygame.Surface((ScreenX, ScreenY), pygame.SRCALPHA, 32).convert_alpha()
+	yoffset = 50 # initial offset
+
+	textWrite(gun.id, (50, 20), Onto=overlay)
+
+	for i in gunmod.statmods:
+		# Title
+		textWrite(i, (30, yoffset + 2), Onto=overlay)
+		overlay.blit(ImgLarrow, (20, yoffset + 20))
+		xoffset = 15
+		# Lower dots
+		for x in range(max(-(gunmod.statmods[i].min + 1), 0)):
+			overlay.blit(ImgDot, (xoffset, yoffset + 20))
+			xoffset += 15
+		# Defualt position dot
+		overlay.blit(ImgDot, (xoffset, yoffset + 15))
+		xoffset += 15
+		# Upper dots
+		for x in range(gunmod.statmods[i].max):
+			overlay.blit(ImgDot, (xoffset, yoffset + 20))
+			xoffset += 15
+		overlay.blit(ImgRarrow, (xoffset, yoffset + 20))
+
+		yoffset += 40
+	return overlay
+
+# Draws the dots and stat values onto the frontal overlay.
+def costOverlay(gunmod, frontal):
+	textWrite(gunmod.netDots, (180, 20), Onto=frontal)
+	return frontal
 
 # CLASSES
 
@@ -763,6 +800,9 @@ OverlayCutter.fill(ClrGreen)
 OverlayGuts = pygame.Surface((240, 1000))
 OverlayGuts.fill(ClrAccent)
 
+# Weapon Mod overlay
+OverlayMods = None
+
 
 # Frontal Icons layer
 Frontal = pygame.Surface((ScreenX, ScreenY), pygame.SRCALPHA, 32).convert_alpha()
@@ -910,6 +950,10 @@ while Looping:
 	Running = True
 	redraw = 1
 	scrollOffset = 0
+
+	modindex = 0
+
+
 	Menu = "title"
 	# Mode selection screen loop
 	while Running:
@@ -924,7 +968,8 @@ while Looping:
 				Running = False
 				Looping = False
 			if event.type == pygame.KEYDOWN:
-				redraw = 1
+				if redraw < 1:
+					redraw = 1
 				# Difficulty selectors
 				if event.key == K_LEFT:
 					keyLeft = True
@@ -934,7 +979,7 @@ while Looping:
 					keyRight = True
 				if event.key == K_DOWN:
 					keyDown = True
-				if event.key == K_t:
+				if event.key == K_t or event.key == K_SPACE:
 					keyExtra = True
 
 		if redraw:
@@ -1006,6 +1051,11 @@ while Looping:
 					Menu = "title"
 					cursor = 5
 					redraw = 3
+			if keyExtra and cursor > 0:
+				modindex = cursor
+				cursor = 0
+				Menu = "mods"
+				redraw = 3
 
 			if redraw > 1:
 				# Scroller
@@ -1073,6 +1123,45 @@ while Looping:
 			OverlayCutter.blit(OverlayGuts, (0, scrollOffset))
 			Screen.blit(OverlayCutter, (10, 50))
 
+		elif Menu == "mods":
+			# Optimally, this would be passed as a pointer to the list.
+			# I don't trust python enough to do that.
+			curGun, curMod = None, None
+			if modindex > 7:
+				curGun = Upgrades2[modindex - 8]
+				curMod = Mods2[modindex - 8]
+			elif modindex > 0:
+				curGun = Upgrades[modindex - 1]
+				curMod = Mods[modindex - 1]
+
+
+			if keyUp:
+				cursor -= 1
+				cursor %= len(curMod.statmods) + 1
+			if keyDown:
+				cursor += 1
+				cursor %= len(curMod.statmods) + 1
+
+			if keyLeft:
+				if cursor > 0:
+					pass # change the dot allocation
+			if keyRight:
+				if cursor > 0:
+					pass # change the dot allocation
+			if ((keyLeft or keyRight) and cursor == 0) or keyExtra:
+				Menu = "guns"
+				cursor = modindex
+				redraw = 3
+
+			if redraw > 0:
+				Frontal.blit(ImgProjBomb, (buttonSpace, 50 + cursor * buttonFull))
+				Frontal.blit(ImgProjBomb, (ScreenX - buttonSpace, 50 + cursor * buttonFull + buttonSize))
+
+			if redraw > 1:
+				OverlayMods = costsImage(curGun, curMod)
+
+			Screen.fill(ClrGreen)
+			Screen.blit(OverlayMods, (0, 0))
 
 		Screen.blit(Frontal, (0, 0))
 		pygame.display.update()
