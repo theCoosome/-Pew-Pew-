@@ -559,18 +559,30 @@ class gun(object):
 		self.regen = False
 
 	# Sets extra data that is consistent for most guns. Created to reduce constructor length.
-	def setBonus(self, ban, crit = 1, counts = True):
+	def setBonus(self, ban, crit = 1, counts = True, regenerate = False):
 		self.ban = ban
 		self.crit = crit
-		self.screenCount = counts;
+		self.screenCount = counts
+		self.regen = regenerate
 
-	def statMods(self, dmgmod = 0, hpmodder = 0, ammomod = 0, cooldownmod = 0, hpmod = 0, toRegen = False):
-		self.dmg += dmgmod
-		self.hpmod += hpmodder
-		self.maxfires += ammomod
-		self.cooldown += cooldownmod
-		self.hp += hpmod
-		self.regen = toRegen
+	def statMods(self, statmods):
+		hpmod, durab, ammo, dmg, cool, regen = 0, 0, 0, 0, 0, False
+		for j in statmods:
+			if j[0] == "HPmod":
+				hpmod = j[1].inc * j[1].value
+			if j[0] == "Durability":
+				durab = j[1].inc * j[1].value
+			if j[0] == "Ammo":
+				ammo = j[1].inc * j[1].value
+			if j[0] == "Damage":
+				dmg = j[1].inc * j[1].value
+			if j[0] == "Cooldown":
+				cool = j[1].inc * j[1].value
+			if j[0] == "Regen" and j[1].value == 1:
+				regen = True
+		retgun = gun(self.id, self.hpmod + hpmod, self.hp + durab, self.maxfires + 1 + ammo, self.size, self.speed, self.move, self.dmg + dmg, self.cooldown + cool, self.pic)
+		retgun.setBonus(self.ban, self.crit, self.screenCount)
+		return retgun
 
 	# Returns a new projectile object corresponding to the gun.
 	def makeProj(self, shipCoords):
@@ -682,7 +694,10 @@ class lots(object):
 		if prev + modval > 0 and prev + modval < 6:
 			self.weights[itempos] += modval
 			self.netsum += modval
-	
+
+	def applyMods(self, weapons, modifiers):
+		for i in range(len(weapons)):
+			self.items[i] = weapons[i].statMods(modifiers[i].statmods)
 
 GunBase = gun("Pew Gun", 0, 1, 99999, (2, 5), 3, 2, 1, 25, ImgProjDefault)
 GunRail = gun("Railgun", 1, 2, 10, (2, 10), 10, 10, 25, 28, ImgProjRailgun)
@@ -1190,7 +1205,9 @@ while Looping:
 	Line(Screen, ClrGreen, (0, 0), (600, 600), 3)
 	pygame.display.update()
 	print("updated screen")
-	
+
+	LowTable.applyMods(Upgrades, Mods)
+	HighTable.applyMods(Upgrades2, Mods2)
 
 	Particles = []
 	Projectiles = []
