@@ -444,12 +444,15 @@ def collide(p1, p2, p3, p4):
 
 # Creates an image background for a gun's mods.
 def costsImage(gun, gunmod):
-	overlay = pygame.Surface((ScreenX, ScreenY), pygame.SRCALPHA, 32).convert_alpha()
+	overlay = pygame.Surface((ScreenX, ScreenY))
+	overlay.fill(ClrBlack)
+	pygame.draw.rect(overlay, ClrAccent, (10, 10, 50, 20))
 	yoffset = 50 # initial offset
 
 	textWrite(gun.id, (50, 20), Onto=overlay)
 
 	for i in gunmod.statmods:
+		pygame.draw.rect(overlay, (100, 100, 100), (8, yoffset, 200, 35))
 		# Title
 		textWrite(i[0], (30, yoffset + 2), Onto=overlay)
 		overlay.blit(ImgLarrow, (20, yoffset + 20))
@@ -963,6 +966,18 @@ def calcEff():
 		Socket.close()
 	return out, score, efficiency
 
+def getNetsum():
+	global LowTable
+	global HighTable
+	global Mods
+	global Mods2
+	netdotsum = 0.0
+	for i in range(len(LowTable.weights)):
+		netdotsum += LowTable.weights[i] * Mods[i].netDots
+	for i in range(len(HighTable.weights)):
+		netdotsum += HighTable.weights[i] * Mods2[i].netDots
+	return netdotsum
+
 
 print("setup complete.")
 # Version
@@ -1048,6 +1063,8 @@ while Looping:
 					redraw = 3
 
 		elif Menu == "guns":
+
+
 		
 			if keyUp:
 				cursor -= 1
@@ -1057,20 +1074,20 @@ while Looping:
 				cursor %= 16
 			
 			if keyLeft:
-				if cursor > 7:
+				if cursor > 7 and (getNetsum() - Mods2[cursor - 8].netDots) / 3 >= 0:
 					HighTable.alter(cursor - 8, -1)
-				elif cursor > 0:
+				elif cursor > 0 and (getNetsum() - Mods[cursor - 1].netDots) / 3 >= 0:
 					LowTable.alter(cursor - 1, -1)
-				else:
+				elif cursor == 0:
 					Menu = "title"
 					cursor = 5
 					redraw = 3
 			if keyRight:
-				if cursor > 7:
+				if cursor > 7 and (getNetsum() + Mods2[cursor - 8].netDots) / 3 >= 0:
 					HighTable.alter(cursor - 8, 1)
-				elif cursor > 0:
+				elif cursor > 0 and (getNetsum() + Mods[cursor - 1].netDots) / 3 >= 0:
 					LowTable.alter(cursor - 1, 1)
-				else:
+				elif cursor == 0:
 					Menu = "title"
 					cursor = 5
 					redraw = 3
@@ -1088,12 +1105,14 @@ while Looping:
 					pygame.draw.rect(OverlayGuts, (100, 100, 100), (2, 2 + yoffset, 230 - 4, buttonSize))
 					OverlayGuts.blit(ImgPowerup, (4, 4 + yoffset))
 					textWrite(Upgrades[i].id, (40, 4 + yoffset), Onto=OverlayGuts)
+					textWrite(str(Mods[i].netDots), (4, 10 + yoffset), Onto=OverlayGuts)
 					verCount += 1
 				for i in range(len(Upgrades2)):
 					yoffset = verCount * (buttonSize + 2)
 					pygame.draw.rect(OverlayGuts, (120, 100, 100), (2, 2 + yoffset, 230 - 4, buttonSize))
 					OverlayGuts.blit(ImgPowerup, (4, 4 + yoffset))
 					textWrite(Upgrades2[i].id, (40, 4 + yoffset), Onto=OverlayGuts)
+					textWrite(str(Mods2[i].netDots), (4, 10 + yoffset), Onto=OverlayGuts)
 					verCount += 1
 
 			if redraw > 0:
@@ -1115,6 +1134,8 @@ while Looping:
 					
 				print(" Cursor: " + str(cursor) + "  offset: " + str(scrollOffset) + "  relative offset of cursor: " + str((cursor - 1) * (buttonSize + 2)))
 				
+				textWrite(str(getNetsum() / 3), (200, 20), Onto=Frontal)
+
 				# Frequency display
 				pygame.draw.rect(Frontal, (100, 100, 100), (1, 50, 8, 590))
 				verCount = 0
@@ -1125,8 +1146,7 @@ while Looping:
 					ypos = verCount * 590 / LowTable.netsum + 50
 					pygame.draw.line(Frontal, (0, 0, 0), (1, ypos), (9, ypos)) 
 
-						
-
+				# Frequency display for high tier
 				pygame.draw.rect(Frontal, (120, 100, 100), (241, 50, 8, 590))
 				verCount = 0
 				for i in range(HighTable.count):
@@ -1173,7 +1193,7 @@ while Looping:
 						curMod.netDots += 1
 			if keyRight:
 				if cursor > 0:
-					if curMod.statmods[cursor - 1][1].value < curMod.statmods[cursor - 1][1].max and curMod.netDots > 0:
+					if curMod.statmods[cursor - 1][1].value < curMod.statmods[cursor - 1][1].max and getNetsum() > 0:
 						curMod.statmods[cursor - 1][1].value += 1
 						curMod.netDots -= 1
 
@@ -1184,14 +1204,18 @@ while Looping:
 				redraw = 3
 
 			if redraw > 0:
-				Frontal.blit(ImgProjBomb, (buttonSpace, 50 + cursor * buttonFull))
-				Frontal.blit(ImgProjBomb, (ScreenX - buttonSpace, 50 + cursor * buttonFull + buttonSize))
 				Frontal = costOverlay(curGun, curMod, Frontal)
+				# Select positions are as defined in costsimage
+				if cursor == 0:
+					Frontal.blit(ImgProjBomb, (10, 10))
+					Frontal.blit(ImgProjBomb, (60, 30))
+				else:
+					Frontal.blit(ImgProjBomb, (8, 50 + ((cursor - 1) * 40)))
+					Frontal.blit(ImgProjBomb, (8 + 200, 50 + 40 + ((cursor - 1) * 40)))
 
 			if redraw > 1:
 				OverlayMods = costsImage(curGun, curMod)
 
-			Screen.fill(ClrGreen)
 			Screen.blit(OverlayMods, (0, 0))
 
 		Screen.blit(Frontal, (0, 0))
