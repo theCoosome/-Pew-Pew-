@@ -9,12 +9,12 @@ from pygame.locals import *
 getcontext().prec = 2
 pygame.init()
 
-OP = True
+OP = False
 DebugMode = False
 RecentDamage = 0
 Psych = False
 
-ConnectToServer, ServerIP, ServerPort = True, "174.25.72.161", 7778
+ConnectToServer, ServerIP, ServerPort = False, "174.25.72.161", 7778
 Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 ClrGreen = pygame.Color(0, 255, 0)
@@ -401,9 +401,11 @@ ImgPlayerDamaged = pygame.image.load('imgs/damagepew.png')
 ImgUpgrade = pygame.image.load('imgs/powerup.png')
 
 ImgDot = FontSmall.render("0", True, (0, 0, 0))
-ImgDselected = FontSmall.render("0", True, (250, 250, 250))
+ImgDselected = ImgPowerup #FontSmall.render("0", True, (250, 250, 250))
 ImgLarrow = FontSmall.render("<", True, (0, 0, 0))
 ImgRarrow = FontSmall.render(">", True, (0, 0, 0))
+ImgSelT = pygame.image.load('imgs/selectorA.png')
+ImgSelB = pygame.image.load('imgs/selectorB.png')
 
 # Returns a list of quant images from the animation folder with the given name.
 def getImgset(name, quant):
@@ -445,14 +447,9 @@ def collide(p1, p2, p3, p4):
 # Creates an image background for a gun's mods.
 def costsImage(gun, gunmod):
 	overlay = pygame.Surface((ScreenX, ScreenY))
-	overlay.fill(ClrBlack)
-	pygame.draw.rect(overlay, ClrAccent, (10, 10, 50, 20))
 	yoffset = 50 # initial offset
-
-	textWrite(gun.id, (50, 20), Onto=overlay)
-
 	for i in gunmod.statmods:
-		pygame.draw.rect(overlay, (100, 100, 100), (8, yoffset, 200, 35))
+		pygame.draw.rect(overlay, (100, 100, 100), (8, yoffset, ScreenX-16, 35))
 		# Title
 		textWrite(i[0], (30, yoffset + 2), Onto=overlay)
 		overlay.blit(ImgLarrow, (20, yoffset + 20))
@@ -476,12 +473,28 @@ def costsImage(gun, gunmod):
 
 # Draws the dots and stat values onto the frontal overlay.
 def costOverlay(gun, gunmod, frontal):
-	textWrite(str(gunmod.netDots), (180, 20), Onto=frontal)
 	yoffset = 50
 	for i in gunmod.statmods:
-		textWrite(str(i[1].inc * i[1].value), (90, yoffset + 2), Onto=frontal)
+		# Get the value of this stat's modification
+		mod = i[1].inc * i[1].value
+		printee = ""
+		# Get each item's print
+		if i[0] == "HPmod":
+			printee = str((gun.hpmod + mod) * 25) + "%"
+		elif i[0] == "Durability":
+			printee = gun.hp + mod
+		elif i[0] == "Ammo":
+			printee = gun.maxfires + mod + 1
+		elif i[0] == "Damage":
+			printee = gun.dmg + mod
+		elif i[0] == "Cooldown":
+			printee = gun.cooldown + mod
+		elif i[0] == "Regen":
+			printee = "Yes" if mod else "No"
+		textWrite(str(printee), (100, yoffset + 2), Onto=frontal)
+		# Build the bar of how much you've purchased
 		for x in range(i[1].value - i[1].min):
-			frontal.blit(ImgDselected, (35 + (x * 15), yoffset + 20))
+			frontal.blit(ImgDselected, (32 + (x * 15), yoffset + 20))
 		yoffset += 40
 	return frontal
 
@@ -772,9 +785,10 @@ buttonFull = buttonSize + buttonSpace
 cursor = 0
 
 # Main Menu
+MenuIcons = 7
 OverlayMenu = pygame.Surface((ScreenX, ScreenY))
 OverlayMenu.fill(ClrBlack)
-for i in range(6):
+for i in range(MenuIcons):
 	pygame.draw.rect(OverlayMenu, ClrAccent, (buttonSpace, (50 + i * buttonFull), 250 - (buttonSpace * 2), buttonSize))
 textWrite("Casual", (30, 60), Onto=OverlayMenu)
 textWrite("Full Job", (30, 60 + buttonFull), Onto=OverlayMenu)
@@ -782,30 +796,39 @@ textWrite("Hard", (30, 60 + buttonFull * 2), Onto=OverlayMenu)
 textWrite("Impossible", (30, 60 + buttonFull * 3), Onto=OverlayMenu)
 textWrite("Test mode", (30, 60 + buttonFull * 4), Onto=OverlayMenu)
 textWrite("Modifications", (30, 60 + buttonFull * 5), Onto=OverlayMenu)
+textWrite("Guide", (30, 60 + buttonFull * 6), Onto=OverlayMenu)
 
 # Main Menu Help subsection
 OverlayHelp = pygame.Surface((ScreenX, ScreenY))
 OverlayHelp.fill(ClrBlack)
 textWrite("Pew Pew", [70, 25], Onto=OverlayHelp)
 textWrite("Use left and right arrows to move", [0, 50 + 20], Onto=OverlayHelp)
-textWrite("Up arrow to fire weapons.", [0, 50 + 40], Onto=OverlayHelp)
-textWrite("Collect Poweups to upgrade your ship", [0, 50 + 60], Onto=OverlayHelp)
-OverlayHelp.blit(ImgPowerup, [(ScreenX / 2) - 20, 50 + 80])
-textWrite("Avoid meteors, and especially camps.", [0, 50 + 100], Onto=OverlayHelp)
-OverlayHelp.blit(ImgsetWalls[0], [60, 50 + 120])
-OverlayHelp.blit(ImgsetWalls[4], [200, 50 + 120])
-textWrite("See your stats at bottom of screen.", [0, 50 + 140], Onto=OverlayHelp)
-textWrite("Press an arrow key to select difficulty", [0, 300], Onto=OverlayHelp)
-textWrite("difficulty increases clockwise,", [0, 300 + 16], Onto=OverlayHelp)
-textWrite("from left as easy to down as impossible.", [0, 300 + 32], Onto=OverlayHelp)
-textWrite("And look out for someone at 10000m...", [0, 500], Onto=OverlayHelp)
+textWrite("Up arrow to fire weapons,", [0, 50 + 40], Onto=OverlayHelp)
+textWrite("and Down arrow to slow down.", [0, 50 + 60], Onto=OverlayHelp)
+textWrite("Collect Poweups to upgrade your ship", [0, 50 + 80], Onto=OverlayHelp)
+OverlayHelp.blit(ImgPowerup, [(ScreenX / 2) - 20, 50 + 100])
+textWrite("Avoid meteors, and especially camps.", [0, 50 + 120], Onto=OverlayHelp)
+OverlayHelp.blit(ImgsetWalls[0], [60, 50 + 140])
+OverlayHelp.blit(ImgsetWalls[4], [200, 50 + 140])
+textWrite("See your stats at bottom of screen.", [0, 50 + 160], Onto=OverlayHelp)
+#textWrite("Press an arrow key to select difficulty", [0, 300], Onto=OverlayHelp)
+#textWrite("difficulty increases clockwise,", [0, 300 + 16], Onto=OverlayHelp)
+#textWrite("from left as easy to down as impossible.", [0, 300 + 32], Onto=OverlayHelp)
+#textWrite("And look out for someone at 10000m...", [0, 500], Onto=OverlayHelp)
+
+textWrite("While you are clearing meteors well,", [0, 300], Onto=OverlayHelp)
+textWrite("better tools may be delivered.", [0, 300 + 16], Onto=OverlayHelp)
+
+textWrite("Modifications can change your finds:", [0, 400], Onto=OverlayHelp)
+textWrite("Use arrow keys to change distribution,", [0, 416], Onto=OverlayHelp)
+textWrite("and Space to modify stats. Points carry.", [0, 432], Onto=OverlayHelp)
 
 # In game Hud
 Hud = pygame.Surface((ScreenX, 95), pygame.SRCALPHA, 32).convert_alpha()
 pygame.draw.rect(Hud, (100, 100, 100), (0, 0, ScreenX, 5))
 pygame.draw.rect(Hud, (80, 80, 80), (0, 5, ScreenX, 10))
 pygame.draw.rect(Hud, ClrAccent, (0, 42, 58, 15))
-pygame.draw.rect(Hud, ClrAccent, (ScreenX, 42, -58, 15))
+pygame.draw.rect(Hud, ClrAccent, (ScreenX-58, 42, 58, 15))
 for i in range(0, 30):
 	pygame.draw.arc(Hud, ClrAccent, (i / 2, 42 + i / 2, 100 - i, 50 - i), 0, 1.56, 1)
 	pygame.draw.arc(Hud, ClrAccent, (150 + i / 2, 42 + i / 2, 100 - i, 50 - i), 1.57, 3.14, 1)
@@ -817,6 +840,7 @@ OverlayWeps = pygame.Surface((ScreenX, ScreenY))
 OverlayWeps.fill(ClrBlack)
 OverlayWeps.blit(ImgPowerup, (220, 10))
 pygame.draw.rect(OverlayWeps, ClrAccent, (10, 10, 50, 20))
+textWrite("Back", [22, 12], Onto=OverlayWeps)
 
 # Weapons scroll cutter
 OverlayCutter = pygame.Surface((230, 590))
@@ -953,17 +977,40 @@ def calcEff():
 			nscore += i
 	score = int(nscore)
 	prints("your score: " + str(score) + "\nYour tier: " + str(Multiplier.difficulty))
+	out = ""
 	if OP:
 		out = "You were opped. High scores not counted."
 	else:
-		
-		Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		Socket.connect((ServerIP, ServerPort))
-		print("Connected")
-		sendInfo(str(Multiplier.difficulty) + " " + str(int(score)))
-		out = serverRecieve()
-		out = out[:len(out) - 1]
-		Socket.close()
+		if ConnectToServer:
+			Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			Socket.connect((ServerIP, ServerPort))
+			print("Connected")
+			sendInfo(str(Multiplier.difficulty) + " " + str(int(score)))
+			out = serverRecieve()
+			out = out[:len(out) - 1]
+			Socket.close()
+		else:
+			print("scoring:", Multiplier.difficulty, score)
+			scores = open("high.txt", 'r')
+			allhigh, newhigh = "", False
+			for i in range(4):
+				high = scores.readline()
+				if i == Multiplier.difficulty and int(score) >= int(high):
+					out = "New Highscore!"
+					print("high score:", i, score)
+					allhigh += str(score)+"\n"
+					newhigh = True
+				#not highscore
+				else:
+					allhigh += str(high)
+				if i == Multiplier.difficulty and int(score) < int(high):
+					high = str(high)
+					out = "Global high score: "+high[:len(high)-1]
+			scores.close()
+			if newhigh:
+				scores = open("high.txt", 'w')
+				scores.write(allhigh)
+				scores.close()
 	return out, score, efficiency
 
 def getNetsum():
@@ -981,7 +1028,8 @@ def getNetsum():
 
 print("setup complete.")
 # Version
-print("pewpew version 0.3.1")
+print("pewpew version 0.3.2")
+print("3 adding stat modifications, .2 making it more user friendly")
 
 Looping = True
 while Looping:
@@ -1028,14 +1076,14 @@ while Looping:
 
 			if keyUp:
 				cursor -= 1
-				cursor %= 6
+				cursor %= MenuIcons
 			if keyDown:
 				cursor += 1
-				cursor %= 6
+				cursor %= MenuIcons
 			
 			if redraw > 0:
-				Frontal.blit(ImgProjBomb, (buttonSpace, 50 + cursor * buttonFull))
-				Frontal.blit(ImgProjBomb, (ScreenX - buttonSpace, 50 + cursor * buttonFull + buttonSize))
+				Frontal.blit(ImgSelT, (buttonSpace, 50 + cursor * buttonFull))
+				Frontal.blit(ImgSelB, (ScreenX - buttonSpace - 8, 50 + cursor * buttonFull + buttonSize - 16))
 
 			if keyLeft or keyRight or keyExtra:
 				if cursor == 0:
@@ -1061,10 +1109,11 @@ while Looping:
 					Menu = "guns"
 					cursor = 0
 					redraw = 3
+				if cursor == 6:
+					Menu = "help"
+					redraw = 3
 
 		elif Menu == "guns":
-
-
 		
 			if keyUp:
 				cursor -= 1
@@ -1126,11 +1175,11 @@ while Looping:
 						scrollOffset = -1 * ((cursor) * (buttonSize + 2) - 590)
 						
 
-					Frontal.blit(ImgProjBomb, (12, 52 + (cursor - 1) * (buttonSize + 2) + scrollOffset))
-					Frontal.blit(ImgProjBomb, (ScreenX - 12, 52 + buttonSize + (cursor - 1) * (buttonSize + 2) + scrollOffset))
+					Frontal.blit(ImgSelT, (12, 52 + (cursor - 1) * (buttonSize + 2) + scrollOffset))
+					Frontal.blit(ImgSelB, (ScreenX - (12 + 8), 52 + buttonSize + (cursor - 1) * (buttonSize + 2) + scrollOffset - 16))
 				else:
-					Frontal.blit(ImgProjBomb, (10, 10))
-					Frontal.blit(ImgProjBomb, (60, 30))
+					Frontal.blit(ImgSelT, (10, 10))
+					Frontal.blit(ImgSelB, (60 - 8, 30 - 16))
 					
 				print(" Cursor: " + str(cursor) + "  offset: " + str(scrollOffset) + "  relative offset of cursor: " + str((cursor - 1) * (buttonSize + 2)))
 				
@@ -1205,18 +1254,31 @@ while Looping:
 
 			if redraw > 0:
 				Frontal = costOverlay(curGun, curMod, Frontal)
+				textWrite(str(curMod.netDots), (200, 20), Onto=Frontal)
 				# Select positions are as defined in costsimage
 				if cursor == 0:
-					Frontal.blit(ImgProjBomb, (10, 10))
-					Frontal.blit(ImgProjBomb, (60, 30))
+					Frontal.blit(ImgSelT, (10, 10))
+					Frontal.blit(ImgSelB, (60 - 8, 30 - 16))
 				else:
-					Frontal.blit(ImgProjBomb, (8, 50 + ((cursor - 1) * 40)))
-					Frontal.blit(ImgProjBomb, (8 + 200, 50 + 40 + ((cursor - 1) * 40)))
+					Frontal.blit(ImgSelT, (8, 50 + ((cursor - 1) * 40)))
+					Frontal.blit(ImgSelB, (ScreenX - 16, 70 + ((cursor - 1) * 40)))
 
 			if redraw > 1:
 				OverlayMods = costsImage(curGun, curMod)
+				OverlayMods.blit(ImgPowerup, (220, 10))
+				#Frontal.fill(ClrBlack)
+				pygame.draw.rect(OverlayMods, ClrAccent, (10, 10, 50, 20))
+				textWrite("Back", [22, 12], Onto=OverlayMods)
+				textWrite(curGun.id, (85, 20), Onto=OverlayMods)
+
 
 			Screen.blit(OverlayMods, (0, 0))
+
+		elif Menu == "help":
+			Screen.blit(OverlayHelp, (0, 0))
+			if keyLeft or keyRight:
+				Menu = "title"
+				redraw = 3
 
 		Screen.blit(Frontal, (0, 0))
 		pygame.display.update()
@@ -1224,81 +1286,83 @@ while Looping:
 		if redraw > 0:
 			redraw -= 1
 
-	# Main variable resetting
-	Screen.fill(ClrBlack)
-	Line(Screen, ClrGreen, (0, 0), (600, 600), 3)
-	pygame.display.update()
-	print("updated screen")
+	# Skip setup if exiting
+	if Looping:
+		# Main variable resetting
+		Screen.fill(ClrBlack)
+		Line(Screen, ClrGreen, (0, 0), (600, 600), 3)
+		pygame.display.update()
+		print("updated screen")
 
-	LowTable.applyMods(Upgrades, Mods)
-	HighTable.applyMods(Upgrades2, Mods2)
+		LowTable.applyMods(Upgrades, Mods)
+		HighTable.applyMods(Upgrades2, Mods2)
 
-	Particles = []
-	Projectiles = []
-	Powerups = []
-	Powerups.append(powerup(((ScreenX / 2) - 7, 50), 1))
-	PlayerShip = ships(4, ((ScreenX / 2) - 15, 500), (6, 10), 1)
-	Boss = boss(1, 200 * Multiplier.hp, 10, (150, 50), 10, 500 / Multiplier.cooldown, ImgBoss)
-	BossesBeat = 0
-	Meteors = []
-	for i in range(5):
-		boolet = meteor(1, (random.randint(0, 25) * 10, 10), random.randint(1, 2))
-		Meteors.append(boolet)
-	Timer = timers()
-	MeteorsSubset = AllMeteors[Multiplier.difficulty]
+		Particles = []
+		Projectiles = []
+		Powerups = []
+		Powerups.append(powerup(((ScreenX / 2) - 7, 50), 1))
+		PlayerShip = ships(4, ((ScreenX / 2) - 15, 500), (6, 10), 1)
+		Boss = boss(1, 200 * Multiplier.hp, 10, (150, 50), 10, 500 / Multiplier.cooldown, ImgBoss)
+		BossesBeat = 0
+		Meteors = []
+		for i in range(5):
+			boolet = meteor(1, (random.randint(0, 25) * 10, 10), random.randint(1, 2))
+			Meteors.append(boolet)
+		Timer = timers()
+		MeteorsSubset = AllMeteors[Multiplier.difficulty]
 
-	if Multiplier.difficulty == 2:
-		equip(GunShielding2)
-	elif Multiplier.difficulty == 3:
-		equip(Upgrades[random.randint(0, len(Upgrades) - 1)])
-	else:
-		equip(GunBase)
-	
-	BossMoveTime = 100
-	BossSpawnTime = 10000
-	MeteorsDestroyed = 0
-	MovePress = False
-	LeftMove = False
-	RightMove = False
-	Shooting = False
-	HasDefender = False
-	MoveModifier = 2
-	ShotCount, HitEfficiency = 0, float(0)
-	# alldam, potdam = 0, 0 # Would be a much better indicator of shot efficiency.
-	Fps = 60
-	PlayerAlive = True
-	RecentDamage = 0
-	SelectorIndex = 0
-
-	print("Let the game begin.")
-	# Version
-	print("pewpew version 0.3")
-	
-	# Creates particles, resets variables, and sets up the next boss encounter
-	def killBoss():
-		global Fps
-		global Multiplier
-		global Boss
-		global Particles
-		global BossesBeat
-		global BossSpawnTime
-		global Timer
+		if Multiplier.difficulty == 2:
+			equip(GunShielding2)
+		elif Multiplier.difficulty == 3:
+			equip(Upgrades[random.randint(0, len(Upgrades) - 1)])
+		else:
+			equip(GunBase)
 		
-		Fps = 10
-		Multiplier.meteors /= 2
-		particleRange = math.floor(Boss.size[0] / 10)
-		for z in range(9):
-			pos1 = random.randint((Boss.coords[0] + (z * particleRange)), (Boss.coords[0] + ((z + 1) * particleRange)))
-			pos2 = random.randint(Boss.coords[1], (Boss.coords[1] + Boss.size[1]))
-			Particles.append(particle([pos1, pos2], [10, 10], [random.randint(-2, 2), random.randint(-1, 3)], ImgsetFlareup))
-		Boss.on = 0
-		BossesBeat += 1
-		rand = (500 / Multiplier.cooldown) - (BossesBeat * 10)
-		if rand < 10:
-			rand = 10
-		Boss = boss(1 + BossesBeat, (300 + (150 * BossesBeat)) * Multiplier.hp, 5 + BossesBeat, (150, 50), 10, rand, ImgBoss)
-		Boss.coords = ((ScreenX / 2) - (Boss.size[0] / 2), - Boss.size[1])
-		BossSpawnTime = Timer.time + 6000
+		BossMoveTime = 100
+		BossSpawnTime = 10000
+		MeteorsDestroyed = 0
+		MovePress = False
+		LeftMove = False
+		RightMove = False
+		Shooting = False
+		HasDefender = False
+		MoveModifier = 2
+		ShotCount, HitEfficiency = 0, float(0)
+		# alldam, potdam = 0, 0 # Would be a much better indicator of shot efficiency.
+		Fps = 60
+		PlayerAlive = True
+		RecentDamage = 0
+		SelectorIndex = 0
+
+		print("Let the game begin.")
+		# Version
+		print("pewpew version 0.3")
+		
+		# Creates particles, resets variables, and sets up the next boss encounter
+		def killBoss():
+			global Fps
+			global Multiplier
+			global Boss
+			global Particles
+			global BossesBeat
+			global BossSpawnTime
+			global Timer
+			
+			Fps = 10
+			Multiplier.meteors /= 2
+			particleRange = math.floor(Boss.size[0] / 10)
+			for z in range(9):
+				pos1 = random.randint((Boss.coords[0] + (z * particleRange)), (Boss.coords[0] + ((z + 1) * particleRange)))
+				pos2 = random.randint(Boss.coords[1], (Boss.coords[1] + Boss.size[1]))
+				Particles.append(particle([pos1, pos2], [10, 10], [random.randint(-2, 2), random.randint(-1, 3)], ImgsetFlareup))
+			Boss.on = 0
+			BossesBeat += 1
+			rand = (500 / Multiplier.cooldown) - (BossesBeat * 10)
+			if rand < 10:
+				rand = 10
+			Boss = boss(1 + BossesBeat, (300 + (150 * BossesBeat)) * Multiplier.hp, 5 + BossesBeat, (150, 50), 10, rand, ImgBoss)
+			Boss.coords = ((ScreenX / 2) - (Boss.size[0] / 2), - Boss.size[1])
+			BossSpawnTime = Timer.time + 6000
 
 	# Main game loop
 	Running = True
@@ -1581,9 +1645,9 @@ while Looping:
 					Running, PlayerShip.hp, PlayerAlive = False, 0, False
 					highscore, score, efficiency = calcEff()
 				# OP
-				if event.key == K_g:
-					OP = True
-					print("Opped.")
+				#if event.key == K_g:
+				#	OP = True
+				#	print("Opped.")
 				if OP:
 					if event.key == K_p or event.key == K_KP0:
 						pause = True
@@ -1716,11 +1780,12 @@ while Looping:
 				Screen.blit(FontSmall.render("Health", True, ClrWhite), [5, ScreenY - 35])
 				dialog = FontLarge.render(str(hpratio) + "%", True, ClrWhite)    
 			Screen.blit(dialog, [5, ScreenY - 23])
-			textWrite("Meters: " + str(Timer.time), [190, ScreenY - 35])
+			textWrite("Distance:", [180, ScreenY - 35])
+			textWrite(str(Timer.time), [160, ScreenY - 23])
 			
-			textWrite("dmg: " + str(RecentDamage), [0, 0])
-			textWrite("Crit: " + str(PlayerShip.hp * (Multiplier.difficulty + 0.5) + RecentDamage), [0, 20])
-			textWrite(str(SelectorIndex), [0, 40])
+			#textWrite("dmg: " + str(RecentDamage), [0, 0])
+			#textWrite("Crit: " + str(PlayerShip.hp * (Multiplier.difficulty + 0.5) + RecentDamage), [0, 20])
+			#textWrite(str(SelectorIndex), [0, 40])
 			
 			# Gun name
 			textWrite("::" + PlayerShip.gun.id, [0, ScreenY - 78], FontLarge)
@@ -1729,8 +1794,8 @@ while Looping:
 			if PlayerShip.gun.cooldown > 0:
 				fireratio = Decimal(Timer.guncool) / Decimal(PlayerShip.gun.cooldown)
 				fireratio = max(min(1, fireratio), 0)
-				pygame.draw.line(Screen, (255, 0, 0), (0, ScreenY - 55), (100, ScreenY - 55), 1)
-				pygame.draw.line(Screen, (255, 0, 0), (100, ScreenY - 55), (100, ScreenY - 33), 1)
+				#pygame.draw.line(Screen, (255, 0, 0), (0, ScreenY - 55), (100, ScreenY - 55), 1)
+				#pygame.draw.line(Screen, (255, 0, 0), (100, ScreenY - 55), (100, ScreenY - 33), 1)
 				color = (max(225 * fireratio, 0), max(225 - (225 * fireratio), 0), 0)
 				pygame.draw.rect(Screen, color, (0, ScreenY - 56, 101 - int(fireratio * 100), 16))
 				pygame.draw.rect(Screen, color, (150 + int(fireratio * 100), ScreenY - 56, 101 - int(fireratio * 100), 16))
@@ -1755,35 +1820,39 @@ while Looping:
 			else: 
 				# Blue if only one shot
 				pygame.draw.rect(Screen, (80, 80, 255), (110, ScreenY - 55, 30, 40))
+			
+			hpval = int(PlayerShip.hp / 12)
+			pygame.draw.rect(Screen, (100, 100, 100), (0, 0, hpval, ScreenY - 55))
+			pygame.draw.rect(Screen, (100, 100, 100), (ScreenX - hpval, 0, hpval, ScreenY - 55))
 
 		if Running:
 			Screen.blit(Hud, (0, ScreenY - 95))
-			
 		pygame.display.update()
 		Clock.tick(Fps)
 
-	# Post game review text
-	print(Timer.neardead)
-	if Multiplier.difficulty == 0:
-		l1 = "You cleaned up " + str(Timer.time) + " meters."
-		l2, l5 = str(MeteorsDestroyed) + " meteor units sweeped ", "at " + str(math.floor(efficiency * 100)) + "% efficiency."
-		l3 = str(BossesBeat) + " Anti-Gonists encountered."
-		l4 = "Total score: " + str(score)
-	if Multiplier.difficulty == 1:
-		l1 = "You cleared " + str(Timer.time) + " meters."
-		l2, l5 = str(MeteorsDestroyed) + " meteor units eliminated ", "at " + str(math.floor(efficiency * 100)) + "% efficiency."
-		l3 = str(BossesBeat) + " Anti-Gonists fought."
-		l4 = "Total score: " + str(score)
-	if Multiplier.difficulty == 2:
-		l1 = "You trekked " + str(Timer.time) + " meters!"
-		l2, l5 = str(MeteorsDestroyed) + " meteor units removed ", "at " + str(math.floor(efficiency * 100)) + "% efficiency."
-		l3 = str(BossesBeat) + " Anti-Gonists eliminated."
-		l4 = "Total score: " + str(score)
-	if Multiplier.difficulty == 3:
-		l1 = "You survived " + str(Timer.time) + " meters!"
-		l2, l5 = str(MeteorsDestroyed) + " meteor units swiped ", "at " + str(math.floor(efficiency * 100)) + "% efficiency."
-		l3 = str(BossesBeat) + " Anti-Gonists destroyed."
-		l4 = "Total score: " + str(score)
+	if Looping:
+		# Post game review text
+		print(Timer.neardead)
+		if Multiplier.difficulty == 0:
+			l1 = "You cleaned up " + str(Timer.time) + " meters."
+			l2, l5 = str(MeteorsDestroyed) + " meteor units sweeped ", "at " + str(math.floor(efficiency * 100)) + "% efficiency."
+			l3 = str(BossesBeat) + " Anti-Gonists encountered."
+			l4 = "Total score: " + str(score)
+		if Multiplier.difficulty == 1:
+			l1 = "You cleared " + str(Timer.time) + " meters."
+			l2, l5 = str(MeteorsDestroyed) + " meteor units eliminated ", "at " + str(math.floor(efficiency * 100)) + "% efficiency."
+			l3 = str(BossesBeat) + " Anti-Gonists fought."
+			l4 = "Total score: " + str(score)
+		if Multiplier.difficulty == 2:
+			l1 = "You trekked " + str(Timer.time) + " meters!"
+			l2, l5 = str(MeteorsDestroyed) + " meteor units removed ", "at " + str(math.floor(efficiency * 100)) + "% efficiency."
+			l3 = str(BossesBeat) + " Anti-Gonists eliminated."
+			l4 = "Total score: " + str(score)
+		if Multiplier.difficulty == 3:
+			l1 = "You survived " + str(Timer.time) + " meters!"
+			l2, l5 = str(MeteorsDestroyed) + " meteor units swiped ", "at " + str(math.floor(efficiency * 100)) + "% efficiency."
+			l3 = str(BossesBeat) + " Anti-Gonists destroyed."
+			l4 = "Total score: " + str(score)
 
 	Running = True
 	while Running and Looping:

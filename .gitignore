@@ -4,3 +4,7 @@
 .vs/VSWorkspaceState.json
 .DS_Store
 anim/.DS_Store
+*.zip
+*.spec
+dist/*
+build/*
